@@ -12,8 +12,38 @@ Quarto enables you to weave together content and executable code into a finished
 When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
 
 ```{r}
-1 + 1
+# Project URL https://www.kaggle.com/datasets/avikpaul4u/vehicle-loan-default-prediction?select=train.csv
+
+
+# Load our files (saved manually to data directory)
+# Training data
+train_dat = read.csv('./data/train.csv')
+
+# Testing data (DO NOT LOAD UNTIL WEEK 8 OR 9!!)
+#test_dat = read.csv('./data/test.csv')
+
+head(train_dat)
+str(train_dat)
+
+training <- 
+
+
+sample <- sample(c(TRUE, FALSE), nrow(train_dat), replace=TRUE, prob=c(0.7,0.3))
+train  <- train_dat[sample, ]
+test   <- train_dat[!sample, ]
+
+test
+  
+
 ```
+
+```{r}
+# Check for any columns with missing data
+sapply(train_dat, anyNA)
+```
+
+
+
 
 You can add options to executable code like this 
 
