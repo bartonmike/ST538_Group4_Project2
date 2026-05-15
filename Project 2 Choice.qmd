@@ -1,0 +1,14 @@
+---
+title: "Project 2: Choice"
+author: "Paul Anderson, Mike Barton, Kevin Kincaid"
+format: pdf
+---
+
+Group 4 has decided to go with the loan dataset. It is of particular interest to one of our group members that just started a job in the financial industry, but we are also interested in employing different methods to work with the unbalanced data and larger amount of potential explanatory variables.
+
+Our Group Contract remains the same, but has been re-submitted.
+
+The box folder has been rearranged to now have a Project 2 folder: https://oregonstate.app.box.com/folder/375417109400
+
+We also continue to utilize GitHub and have a new project repository there: https://github.com/bartonmike/ST538_Group4_Project2
+
