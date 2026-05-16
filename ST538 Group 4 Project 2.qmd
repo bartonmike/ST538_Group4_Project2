@@ -14,6 +14,7 @@ When you click the **Render** button a document will be generated that includes 
 ```{r}
 # Project URL https://www.kaggle.com/datasets/avikpaul4u/vehicle-loan-default-prediction?select=train.csv
 
+set.seed(2026)
 
 # Load our files (saved manually to data directory)
 # Training data
@@ -49,11 +50,109 @@ There are no missingness in the data!
 # Did they default?
 train_dat %>%
   summarise(
-    defaulted_yes = sum(LOAN_DEFAULT == 1),
-    defaulted_no = sum(LOAN_DEFAULT == 0)
+    defaulted_yes_overall = sum(LOAN_DEFAULT == 1),
+    defaulted_no_overall = sum(LOAN_DEFAULT == 0)
+    
+  )
+
+train %>%
+  summarise(
+    defaulted_yes_train = sum(LOAN_DEFAULT == 1),
+    defaulted_no_train = sum(LOAN_DEFAULT == 0)
+    
+  )
+
+test %>%
+  summarise(
+    defaulted_yes_test = sum(LOAN_DEFAULT == 1),
+    defaulted_no_test = sum(LOAN_DEFAULT == 0)
     
   )
 ```
 
 
+Possible variables
 
+disbursed_amount
+asset_cost
+ltv
+
+
+
+
+
+Employment.Type
+
+
+
+
+
+
+VoterID_flag
+Driving_flag
+Passport_flag
+PERFORM_CNS.SCORE
+PERFORM_CNS.SCORE.DESCRIPTION
+PRI.NO.OF.ACCTS
+PRI.ACTIVE.ACCTS
+PRI.OVERDUE.ACCTS
+PRI.CURRENT.BALANCE
+PRI.SANCTIONED.AMOUNT
+PRI.DISBURSED.AMOUNT
+
+
+
+
+
+
+
+
+NEW.ACCTS.IN.LAST.SIX.MONTHS
+DELINQUENT.ACCTS.IN.LAST.SIX.MONTHS
+AVERAGE.ACCT.AGE
+CREDIT.HISTORY.LENGTH
+NO.OF_INQUIRIES
+disbursed_amount
+asset_cost
+ltv
+
+
+
+
+
+Employment.Type
+
+
+
+
+
+
+VoterID_flag
+Driving_flag
+Passport_flag
+PERFORM_CNS.SCORE
+PERFORM_CNS.SCORE.DESCRIPTION
+PRI.NO.OF.ACCTS
+PRI.ACTIVE.ACCTS
+PRI.OVERDUE.ACCTS
+PRI.CURRENT.BALANCE
+PRI.SANCTIONED.AMOUNT
+PRI.DISBURSED.AMOUNT
+
+
+
+
+
+
+
+
+NEW.ACCTS.IN.LAST.SIX.MONTHS
+DELINQUENT.ACCTS.IN.LAST.SIX.MONTHS
+AVERAGE.ACCT.AGE
+CREDIT.HISTORY.LENGTH
+NO.OF_INQUIRIES
+
+
+for all the 2nd account holder variables, could just concatenate into a 2nd account holder yes/no?
+
+there are a few that could need to be ranked, IE performance score description, or take their performance score and bin it..
