@@ -11,6 +11,14 @@ Quarto enables you to weave together content and executable code into a finished
 
 When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
 
+Based on this output, we could easily modify the CHR strings (CREDIT_HISTORY_LENGTH, AVERAGE_ACCT_AGE, PERFORM_CNS_SCORE_DESCRIPTION, DISBURSAL_DATE, EMPLOYMENT_TYPE, DATE_OF_BIRTH) to categorical/ordinal/numeric variables if needed.
+
+```{r}
+# load dependencies
+library(tidyverse)
+```
+
+
 ```{r}
 # Project URL https://www.kaggle.com/datasets/avikpaul4u/vehicle-loan-default-prediction?select=train.csv
 
@@ -34,8 +42,6 @@ train  <- train_dat[sample, ]
 test   <- train_dat[!sample, ]
 
 test
-  
-
 ```
 
 ```{r}
@@ -44,25 +50,25 @@ sapply(train_dat, anyNA)
 ```
 
 
-There are no missingness in the data!
+There are no missingness in the data! Pretty sweet!
 
 ```{r}
 # Did they default?
-train_dat %>%
+train_dat |>
   summarise(
     defaulted_yes_overall = sum(LOAN_DEFAULT == 1),
     defaulted_no_overall = sum(LOAN_DEFAULT == 0)
     
   )
 
-train %>%
+train |>
   summarise(
     defaulted_yes_train = sum(LOAN_DEFAULT == 1),
     defaulted_no_train = sum(LOAN_DEFAULT == 0)
     
   )
 
-test %>%
+test |>
   summarise(
     defaulted_yes_test = sum(LOAN_DEFAULT == 1),
     defaulted_no_test = sum(LOAN_DEFAULT == 0)
