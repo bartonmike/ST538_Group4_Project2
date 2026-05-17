@@ -45,11 +45,11 @@ library(tidyverse)
 library(lubridate)
 library(stringr)
 library(knitr)
+library(randomForest)
 ```
 
 
 ```{r}
-#| include: false
 #| include: false
 #| echo: false
 # Project URL https://www.kaggle.com/datasets/avikpaul4u/vehicle-loan-default-prediction?select=train.csv
@@ -74,7 +74,6 @@ str(train_dat)
 # Check for any columns with missing data
 sapply(train_dat, anyNA)
 ```
-
 
 There are no missingness in the data! Pretty sweet!
 
@@ -331,6 +330,10 @@ train_dat <- train_dat %>%
     mutate(EMPLOYMENT_TYPE = na_if(EMPLOYMENT_TYPE, ""))
 ```
 
+
+
+
+
 ```{r}
 # validation
 cat("Rows:", nrow(train_dat), "\n")
@@ -376,6 +379,8 @@ print(data.frame(
 ))
 ```
 
+
+
 ```{r}
 # default rate by stress score table
 stress_table <- train_dat %>%
@@ -405,6 +410,9 @@ knitr::kable(
   format.args = list(big.mark = ",")
 )
 ```
+
+
+
 ```{r}
 # default rate by stress score graphically
 stress_summary <- train_dat %>%
@@ -451,6 +459,9 @@ Summary of EDA and feature engineering:
 Thirty-five percent of loans are high loan to value (LTV) of >80%, combined with a large portion of borrowers having thin credit history (%), it shows a meaningful concentration of risk. The vast majority (94%) of borrowers fall in the prime age band, 13,812 young borrowers (<22 years of age) are worth watching. Fifty-six percent of borrowers are "thin file" meaning they have <12 month of credit history. This makes sense, in India about half of first time car buyers are using lending for the first time. Thin and normal are two different populations, we may want to split the dataset and create a model for thin credit and one for normal, or focus our efforts on normal only--the model will likely suffer trying to work on both. 
 
 Stress score is working well as a risk signal. Default raises from 15% at score 0 to ~49% at score 5 (3x). Most of the population sits at 2 (21% default), probably thin-file + high-LTV, but no active delinquncy.The jump from 2 to 3 is steep (21-29%), pri_any_overdue_flag and/or recent_delinquncy_flag are likely doing a lot of work. Scores 4 and 5 are small segments with high default rates (42-49%), it's really up to us if we want to keep them, probably should. Score 0 is not zero (15.1%), even the cleanest borrowers carry default risk. We can use this stress_score as a standalone feature, but it's worth noting that components might actually capture more non-linear interactions than the score itself.
+
+
+
 
 ```{r}
 # engineered feature index table
@@ -499,6 +510,8 @@ knitr::kable(feature_index_wide, format = "simple", col.names = c("Category", "F
 ```
 
 
+
+
 ```{r}
 train_dat_normal <- train_dat %>%
   filter(thin_file_flag == 0)
@@ -508,6 +521,10 @@ train_dat_thin <- train_dat %>%
 
 cbind(count(train_dat_normal),count(train_dat_thin))
 ```
+
+
+
+
 
 
 ```{r}
@@ -522,15 +539,18 @@ validate_percent <- 0.5 # Ends up being 0.15
 train_percent <- 0.5 # Ends up being 0.15
 
 
-# splitting into train/not_train
-sample <- sample(c(TRUE, FALSE), nrow(train_dat), replace=TRUE, prob=c(train_percent,not_train_percent))
+# splitting into train/not_train -   this had an error with nrow(train_dat) producing too long of a sample
+sample <- sample(c(TRUE, FALSE), nrow(train_dat_normal), replace=TRUE, prob=c(train_percent,not_train_percent))
 training  <- train_dat_normal[sample, ]
+
+
+
 not_training   <- train_dat_normal[!sample, ]
 
 # splitting into validation/test
 train_sample <- sample(c(TRUE, FALSE), nrow(not_training), replace=TRUE, prob=c(validate_percent,train_percent))
-validation  <- not_training[sample, ]
-testing   <- not_training[!sample, ]
+validation  <- not_training[train_sample, ]
+testing   <- not_training[!train_sample, ]
 
 
 # # Did they default?
@@ -554,3 +574,59 @@ testing   <- not_training[!sample, ]
 #     
 #   )
 ```
+
+
+```{r}
+  #sapply(testing[,c(-10, -56, -66, -73)], anyNA)
+```
+
+```{r}
+  head(training[,c(-10, -56, -66, -73)])
+  # the following have NA values which do not work with forest
+  #10 EMPLOYMENT_TYPE
+  #56 thin_file_reason
+  #66 new_loan_emi_ratio
+  
+  #73 is predictor high_stress_flag
+  #sapply(training[,c(-10, -56, -66, -73)], anyNA)
+  
+  #training |> filter(is.na(thin_file_reason))
+  #training |> filter(is.na(high_stress_flag))
+```
+
+
+```{r}
+  rf.sim1 = randomForest(training[,c(-10, -56, -66, -73)], 
+                         factor(training[,73]))
+```
+
+
+```{r}
+# CURRENTLY TOO LARGE!!!
+# Random Forest Classifier for Digit Recognition Data
+  #rf.digit = randomForest(training[,c(-10, -56, -66, -73)], factor(training[,73]),  xtest = testing[,c(-10, -56, -66, -73)], factor(testing[,73]), ntrees = 7,  importance = T, proximity = T)
+  # Predicted response labels
+  #rfPred.digit = (rf.digit$test)$predicted
+  # Misclassification errors in the test data
+ # table(digit_no.test, rfPred.digit)  
+  # Variable Importance Plot
+  #varImpPlot(rf.digit)  
+  
+
+```
+
+```{r}
+  pred.rf.sim1 = rf.sim1$predicted
+  table(training[,73], pred.rf.sim1)
+  
+  varImpPlot(rf.sim1)  
+  
+  
+  #training |> filter(high_stress_flag == 1)
+```
+
+
+```{r}
+  
+```
+
