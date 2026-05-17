@@ -38,6 +38,8 @@ score 0 to 49% at score 5, providing early evidence that the engineered
 features carry meaningful signal.
 
 ```{r}
+#| include: false
+#| warning: false
 # load dependencies
 library(tidyverse)
 library(lubridate)
@@ -48,6 +50,8 @@ library(knitr)
 
 ```{r}
 #| include: false
+#| include: false
+#| echo: false
 # Project URL https://www.kaggle.com/datasets/avikpaul4u/vehicle-loan-default-prediction?select=train.csv
 
 set.seed(2026)
@@ -62,12 +66,7 @@ train_dat = read.csv('./data/train.csv')
 head(train_dat)
 str(train_dat)
 
-# splitting 70/30 train/test
-sample <- sample(c(TRUE, FALSE), nrow(train_dat), replace=TRUE, prob=c(0.7,0.3))
-train  <- train_dat[sample, ]
-test   <- train_dat[!sample, ]
 
-head(train)
 ```
 
 ```{r}
@@ -79,30 +78,7 @@ sapply(train_dat, anyNA)
 
 There are no missingness in the data! Pretty sweet!
 
-```{r}
-#| include: false
-# Did they default?
-train_dat |>
-  summarise(
-    defaulted_yes_overall = sum(LOAN_DEFAULT == 1),
-    defaulted_no_overall = sum(LOAN_DEFAULT == 0)
-    
-  )
 
-train |>
-  summarise(
-    defaulted_yes_train = sum(LOAN_DEFAULT == 1),
-    defaulted_no_train = sum(LOAN_DEFAULT == 0)
-    
-  )
-
-test |>
-  summarise(
-    defaulted_yes_test = sum(LOAN_DEFAULT == 1),
-    defaulted_no_test = sum(LOAN_DEFAULT == 0)
-    
-  )
-```
 
 
 Feature engineering
@@ -523,4 +499,58 @@ knitr::kable(feature_index_wide, format = "simple", col.names = c("Category", "F
 ```
 
 
+```{r}
+train_dat_normal <- train_dat %>%
+  filter(thin_file_flag == 0)
 
+train_dat_thin <- train_dat %>%
+  filter(thin_file_flag == 1)
+
+cbind(count(train_dat_normal),count(train_dat_thin))
+```
+
+
+```{r}
+#| include: false
+
+# Set our splits
+train_percent <- 0.7
+not_train_percent <- 0.3
+
+# not_train split up 
+validate_percent <- 0.5 # Ends up being 0.15
+train_percent <- 0.5 # Ends up being 0.15
+
+
+# splitting into train/not_train
+sample <- sample(c(TRUE, FALSE), nrow(train_dat), replace=TRUE, prob=c(train_percent,not_train_percent))
+training  <- train_dat_normal[sample, ]
+not_training   <- train_dat_normal[!sample, ]
+
+# splitting into validation/test
+train_sample <- sample(c(TRUE, FALSE), nrow(not_training), replace=TRUE, prob=c(validate_percent,train_percent))
+validation  <- not_training[sample, ]
+testing   <- not_training[!sample, ]
+
+
+# # Did they default?
+# train_dat |>
+#   summarise(
+#     defaulted_yes_overall = sum(LOAN_DEFAULT == 1),
+#     defaulted_no_overall = sum(LOAN_DEFAULT == 0)
+#     
+#   )
+# 
+# train |>
+#   summarise(
+#     defaulted_yes_train = sum(LOAN_DEFAULT == 1),
+#     defaulted_no_train = sum(LOAN_DEFAULT == 0)
+#   )
+# 
+# test |>
+#   summarise(
+#     defaulted_yes_test = sum(LOAN_DEFAULT == 1),
+#     defaulted_no_test = sum(LOAN_DEFAULT == 0)
+#     
+#   )
+```
