@@ -577,18 +577,20 @@ testing   <- not_training[!train_sample, ]
 
 
 ```{r}
-  #sapply(testing[,c(-10, -56, -66, -73)], anyNA)
+  #sapply(testing[,c(-10, -56, -66, -41)], anyNA)
+  
 ```
 
 ```{r}
-  head(training[,c(-10, -56, -66, -73)])
+  head(training[,c(-10, -56, -66, -41)])
   # the following have NA values which do not work with forest
   #10 EMPLOYMENT_TYPE
   #56 thin_file_reason
   #66 new_loan_emi_ratio
   
-  #73 is predictor high_stress_flag
-  #sapply(training[,c(-10, -56, -66, -73)], anyNA)
+  #41 is predictor LOAN_DEFAULT
+  sapply(training,anyNA)
+  #sapply(training[,c(-10, -56, -66, -42)], anyNA)
   
   #training |> filter(is.na(thin_file_reason))
   #training |> filter(is.na(high_stress_flag))
@@ -596,15 +598,15 @@ testing   <- not_training[!train_sample, ]
 
 
 ```{r}
-  rf.sim1 = randomForest(training[,c(-10, -56, -66, -73)], 
-                         factor(training[,73]))
+  rf.sim1 = randomForest(training[,c(-10, -56, -66, -41)], 
+                         factor(training$LOAN_DEFAULT))
 ```
 
 
 ```{r}
 # CURRENTLY TOO LARGE!!!
 # Random Forest Classifier for Digit Recognition Data
-  #rf.digit = randomForest(training[,c(-10, -56, -66, -73)], factor(training[,73]),  xtest = testing[,c(-10, -56, -66, -73)], factor(testing[,73]), ntrees = 7,  importance = T, proximity = T)
+  #rf.digit = randomForest(training[,c(-10, -56, -66, -41)], factor(training$LOAN_DEFAULT),  xtest = testing[,c(-10, -56, -66, -41)], factor(testing$LOAN_DEFAULT),  importance = T, proximity = T)
   # Predicted response labels
   #rfPred.digit = (rf.digit$test)$predicted
   # Misclassification errors in the test data
@@ -617,11 +619,11 @@ testing   <- not_training[!train_sample, ]
 
 ```{r}
   pred.rf.sim1 = rf.sim1$predicted
-  table(training[,73], pred.rf.sim1)
+  table(training[,41], pred.rf.sim1)
   
   varImpPlot(rf.sim1)  
   
-  
+
   #training |> filter(high_stress_flag == 1)
 ```
 
