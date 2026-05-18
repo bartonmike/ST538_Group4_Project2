@@ -836,3 +836,16 @@ kable(
 
 
 After feature extraction and variable selection, we split the dataset into training, validation, and testing subsets using a 70/15/15 split, resulting in approximately 72,000 observations in the training set and 15,000 observations each in the validation and testing sets. We began by fitting a default random forest classifier to the training data and evaluating its performance on both the training and validation datasets. Due to the strong class imbalance in the loan default variable, the initial models showed poor sensitivity for detecting loan defaults, despite relatively high overall accuracy. We then adjusted model parameters and explored additional tuning strategies, including the use of tuneRF() to optimize the mtry parameter and balanced sampling to improve classification performance. The tuned model substantially improved recall for default predictions, though it also increased the number of false positive classifications. While the final random forest model showed meaningful improvement over the baseline models (Table 2), prediction performance for loan defaults remained moderate, indicating that additional tuning or alternative classification methods may be necessary for highly imbalanced loan data. In future work, we plan to continue tuning the random forest model and compare its performance against at least two additional classification approaches.
+
+
+## Appendix
+
+```{r appendix-collect, include=FALSE}
+all_chunks <- setdiff(knitr::all_labels(), c("appendix-collect", "appendix"))
+```
+
+```{r appendix, ref.label=all_chunks}
+#| echo: true
+#| eval: false
+
+```
