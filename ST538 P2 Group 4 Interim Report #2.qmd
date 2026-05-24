@@ -46,6 +46,12 @@ library(lubridate)
 library(stringr)
 library(knitr)
 library(randomForest)
+
+# Week 3 (report 2)
+#install.packages("xgboost")
+library(xgboost)
+library(caret)
+library(pROC)
 ```
 
 
@@ -852,12 +858,122 @@ BEGIN INTERIM REPORT 2
 
 ```{r}
 # XG Boost
+
+# convert to matrices
+x_train <- model.matrix(
+  ~ . - 1,
+  data = training[, drop_cols]
+)
+
+x_valid <- model.matrix(
+  ~ . - 1,
+  data = validation[, drop_cols]
+)
+
+y_train <- training$LOAN_DEFAULT
+y_valid <- validation$LOAN_DEFAULT
+
+
+
+# Deal with the imbalance
+scale_pos_weight <- sum(y_train == 0) / sum(y_train == 1)
+
+scale_pos_weight
+
+
+# Training matrices
+dtrain <- xgb.DMatrix(
+  data = x_train,
+  label = y_train
+)
+
+dvalid <- xgb.DMatrix(
+  data = x_valid,
+  label = y_valid
+)
+
+# Initial XGBoost model
+params <- list(
+  objective = "binary:logistic",
+  eval_metric = "auc",
+  max_depth = 6,
+  eta = 0.05,
+  subsample = 0.8,
+  colsample_bytree = 0.8,
+  scale_pos_weight = scale_pos_weight
+)
+
+xgb_model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 300,
+  watchlist = list(train = dtrain, validation = dvalid),
+  verbose = 1
+)
+
+
+```
+
+
+```{r}
+# Get predictions
+pred_prob <- predict(xgb_model, dvalid)
+
+pred_class <- ifelse(pred_prob > 0.30, 1, 0)
+
+table(
+  Actual = y_valid,
+  Predicted = pred_class
+)
+```
+
+This seems to be doing worse than our tuned forest, looking at our AUC score, we get 0.5274 which confirms it.
+
+```{r}
+roc_obj <- roc(y_valid, pred_prob)
+
+auc(roc_obj)
 ```
 
 
 
+```{r}
+thresholds <- c(0.10, 0.15, 0.20, 0.25, 0.30)
+
+xgb_threshold_results <- lapply(thresholds, function(t) {
+  pred_class <- ifelse(pred_prob > t, 1, 0)
+  tab <- table(
+    Actual = y_valid,
+    Predicted = pred_class
+  )
+
+  TN <- tab["0", "0"]
+  FP <- tab["0", "1"]
+  FN <- tab["1", "0"]
+  TP <- tab["1", "1"]
+
+  data.frame(
+    Threshold = t,
+    Accuracy = (TP + TN) / sum(tab),
+    Recall = TP / (TP + FN),
+    Precision = TP / (TP + FP),
+    Specificity = TN / (TN + FP),
+    F1 = 2 * ((TP / (TP + FP)) * (TP / (TP + FN))) /
+      ((TP / (TP + FP)) + (TP / (TP + FN)))
+  )
+}) |> 
+  bind_rows()
+
+xgb_threshold_results
+```
+
+Looking at the different thresholds, we can see that 0.10 and 0.15 give better results for the imbalanced data. We can explore this further. We may also want to revert back to a LASSO or something similar to try and sift out any variables that might have too much overlap and not be contributing.
 
 
+
+## NEAR FUTURE DIRECTIONS
+
+Directions for next week: We may consider SMOTE or downsampling to comabat the imbalance in the data. https://www.geeksforgeeks.org/machine-learning/how-to-use-smote-for-imbalanced-data-in-r/
 
 
 ## Appendix
