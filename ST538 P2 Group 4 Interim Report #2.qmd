@@ -34,6 +34,9 @@ library(randomForest)
 library(xgboost)
 library(caret)
 library(pROC)
+# install.packages("kable")
+# library(kable)
+# library(kableExtra)
 ```
 
 
@@ -930,15 +933,19 @@ pred_prob <- predict(xgb_model, dvalid)
 
 pred_class <- ifelse(pred_prob > 0.30, 1, 0)
 
-table(
+conf_mat <- table(
   Actual = y_valid,
   Predicted = pred_class
 )
+
+kable(as.data.frame.matrix(conf_mat),
+      caption = "Confusion Matrix")
 ```
 
 ```{r}
 #| warning: false
 #| echo: false
+#| include: false
 roc_obj <- roc(y_valid, pred_prob)
 
 auc(roc_obj)
@@ -976,7 +983,12 @@ xgb_threshold_results <- lapply(thresholds, function(t) {
 }) |> 
   bind_rows()
 
-xgb_threshold_results
+knitr::kable(
+  xgb_threshold_results,
+  format      = "simple",
+  align       = c("c", "r", "r", "r", "r", "r"),
+  caption     = "XGBoost Peformance by Threshold"
+)
 ```
 
 
