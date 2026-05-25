@@ -922,7 +922,6 @@ xgb_model <- xgb.train(
 
 ```
 
-
 ```{r}
 #| warning: false
 #| echo: false
@@ -936,8 +935,6 @@ table(
   Predicted = pred_class
 )
 ```
-
-This seems to be doing worse than our tuned forest, looking at our AUC score, we get 0.5274 which confirms it.
 
 ```{r}
 #| warning: false
