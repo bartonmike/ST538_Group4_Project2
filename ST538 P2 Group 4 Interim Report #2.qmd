@@ -41,6 +41,7 @@ library(pROC)
 #| include: false
 #| warning: false
 #| echo: false
+
 # Project URL https://www.kaggle.com/datasets/avikpaul4u/vehicle-loan-default-prediction?select=train.csv
 
 # Load our files (saved manually to data directory)
@@ -58,6 +59,7 @@ str(train_dat)
 ```{r}
 #| include: false
 #| echo: false
+
 # Check for any columns with missing data
 sapply(train_dat, anyNA)
 
@@ -337,6 +339,7 @@ train_dat <- train_dat %>%
 #| include: false
 #| echo: false
 #| warning: false
+
 # validation
 cat("Rows:", nrow(train_dat), "\n")
 cat("Total columns after engineering:", ncol(train_dat), "\n")
@@ -849,12 +852,18 @@ First, we tried fitting a default random forest classifier to the training data 
 
 
 ```{r}
+#| include: false
+#| warning: false
+#| echo: false
 # Let's try going back to LASSO, see which features we get
 ```
 
 
 
 ```{r}
+#| include: false
+#| warning: false
+#| echo: false
 
 # XG Boost
 
@@ -915,6 +924,8 @@ xgb_model <- xgb.train(
 
 
 ```{r}
+#| warning: false
+#| echo: false
 # Get predictions
 pred_prob <- predict(xgb_model, dvalid)
 
@@ -929,6 +940,8 @@ table(
 This seems to be doing worse than our tuned forest, looking at our AUC score, we get 0.5274 which confirms it.
 
 ```{r}
+#| warning: false
+#| echo: false
 roc_obj <- roc(y_valid, pred_prob)
 
 auc(roc_obj)
@@ -937,6 +950,8 @@ auc(roc_obj)
 
 
 ```{r}
+#| warning: false
+#| echo: false
 
 thresholds <- c(0.10, 0.15, 0.20, 0.25, 0.30)
 
