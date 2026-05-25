@@ -3,37 +3,19 @@ title: "ST 538 Group 4 Project 2"
 author: Paul Anderson, Michael Barton, Kevin Kincaid
 format: pdf
 ---
-## Introduction to Dataset
-Vehicle loan default prediction presents a distinct set of challenges relative
-to other retail credit products. Unlike mortgage or personal loan portfolios,
-two-wheeler financing in emerging markets such as India serves a large
-population of first-time borrowers with little or no bureau history, making
-traditional score-based underwriting insufficient on its own. This analysis
-uses the CRIF High Mark vehicle loan dataset to develop a feature set capable
+
+
+This analysis uses the CRIF High Mark vehicle loan dataset to develop a feature set capable
 of identifying first-EMI default risk across both scored and thin-file borrower
-segments.
-
-
-The dataset comprises 233,154 disbursed loans with a binary default indicator
+segments. The dataset is comprised of  233,154 disbursed loans with a binary default indicator
 capturing payment failure on the first EMI due date. A notable characteristic
 of this population is that 56% of borrowers carry no scoreable bureau history,
 which necessitates treating thin-file and scored segments with care rather than
-imputing or ignoring the distinction. Among scored borrowers, the CRIF CNS
-score serves as the single strongest individual predictor and is encoded here
-as a 20-level ordered factor preserving the full risk ranking across bands.
+imputing or ignoring the distinction. 
 
-Feature engineering focuses on translating domain knowledge into model-ready
-variables: loan structure risk (LTV, implied down payment), borrower
-demographics (age at disbursement, employment type), identity verification
-depth (KYC document count), credit utilisation and delinquency history across
-primary and secondary accounts, EMI burden relative to existing obligations,
-and recent bureau activity including new account uptake and hard enquiries.
 
-A composite stress score aggregating six binary risk flags is also constructed
-as a diagnostic and interpretability aid. Initial cross-tabulation confirms
-that the stress score tracks default rate monotonically, rising from 15% at
-score 0 to 49% at score 5, providing early evidence that the engineered
-features carry meaningful signal.
+
+
 
 ```{r}
 #| include: false
@@ -84,6 +66,20 @@ sapply(train_dat, anyNA)
 
 
 ## Feature extraction and description
+
+Feature engineering focuses on translating domain knowledge into model-ready
+variables: loan structure risk (LTV, implied down payment), borrower
+demographics (age at disbursement, employment type), identity verification
+depth (KYC document count), credit utilisation and delinquency history across
+primary and secondary accounts, EMI burden relative to existing obligations,
+and recent bureau activity including new account uptake and hard enquiries.
+
+A composite stress score aggregating six binary risk flags is also constructed
+as a diagnostic and interpretability aid. Initial cross-tabulation confirms
+that the stress score tracks default rate monotonically, rising from 15% at
+score 0 to 49% at score 5, providing early evidence that the engineered
+features carry meaningful signal.
+
 ```{r}
 #| include: false
 #| echo: false
@@ -467,6 +463,7 @@ Stress score is working well as a risk signal. Default raises from 15% at score 
 
 
 
+
 ```{r}
 #| echo: false
 #| include: false
@@ -533,7 +530,10 @@ cbind(count(train_dat_normal),count(train_dat_thin))
 
 ## Building Classifiers and Results
 
+After feature extraction and variable selection, we split the dataset into training, validation, and testing subsets using a 70/15/15 split, resulting in approximately 72,000 observations in the training set and 15,000 observations each in the validation and testing sets.
 
+We will utilize two methods to try classifying defaults accurately:
+Random Forest & XGBoost
 
 ```{r}
 #| echo: false
@@ -842,13 +842,11 @@ kable(
 
 
 
-After feature extraction and variable selection, we split the dataset into training, validation, and testing subsets using a 70/15/15 split, resulting in approximately 72,000 observations in the training set and 15,000 observations each in the validation and testing sets. We began by fitting a default random forest classifier to the training data and evaluating its performance on both the training and validation datasets. Due to the strong class imbalance in the loan default variable, the initial models showed poor sensitivity for detecting loan defaults, despite relatively high overall accuracy. We then adjusted model parameters and explored additional tuning strategies, including the use of tuneRF() to optimize the mtry parameter and balanced sampling to improve classification performance. The tuned model substantially improved recall for default predictions, though it also increased the number of false positive classifications. While the final random forest model showed meaningful improvement over the baseline models (Table 2), prediction performance for loan defaults remained moderate, indicating that additional tuning or alternative classification methods may be necessary for highly imbalanced loan data. In future work, we plan to continue tuning the random forest model and compare its performance against at least two additional classification approaches.
+First, we tried fitting a default random forest classifier to the training data and evaluating its performance on both the training and validation datasets. Due to the strong class imbalance in the loan default variable, the initial models showed poor sensitivity for detecting loan defaults, despite relatively high overall accuracy. We then adjusted model parameters and explored additional tuning strategies, including the use of tuneRF() to optimize the mtry parameter and balanced sampling to improve classification performance. The tuned model substantially improved recall for default predictions, though it also increased the number of false positive classifications. While the final random forest model showed meaningful improvement over the baseline models (Table 2), prediction performance for loan defaults remained moderate, indicating that additional tuning or alternative classification methods may be necessary for highly imbalanced loan data. 
 
 
 
 
-
-BEGIN INTERIM REPORT 2
 
 ```{r}
 # Let's try going back to LASSO, see which features we get
@@ -857,6 +855,7 @@ BEGIN INTERIM REPORT 2
 
 
 ```{r}
+
 # XG Boost
 
 # convert to matrices
@@ -938,6 +937,7 @@ auc(roc_obj)
 
 
 ```{r}
+
 thresholds <- c(0.10, 0.15, 0.20, 0.25, 0.30)
 
 xgb_threshold_results <- lapply(thresholds, function(t) {
@@ -967,13 +967,14 @@ xgb_threshold_results <- lapply(thresholds, function(t) {
 xgb_threshold_results
 ```
 
-Looking at the different thresholds, we can see that 0.10 and 0.15 give better results for the imbalanced data. We can explore this further. We may also want to revert back to a LASSO or something similar to try and sift out any variables that might have too much overlap and not be contributing.
+
+Next we trained XGBoost classifiers on our cleaned dataset. We did utilize the scale_pos_weight parameter when training the model to try compensating for the imbalance in the response variable. After training the model we found it was doing worse than our tuned forest. In testing the AUC score was 0.5274, confirming the models inaccuracy. We then explored different   thresholds and found that 0.10 and 0.15 give better results for the imbalanced data. It may be necessary to utilize LASSO or other methods to try and remove overlapping variables before training the XGBoost models.
 
 
 
-## NEAR FUTURE DIRECTIONS
+## Next Steps
 
-Directions for next week: We may consider SMOTE or downsampling to comabat the imbalance in the data. https://www.geeksforgeeks.org/machine-learning/how-to-use-smote-for-imbalanced-data-in-r/
+Based on our analysis, it is clear that the most pressing issue is to find a method to combat the imbalance present in our data. We may consider utilizing SMOTE or downsampling methods to compensate for this. https://www.geeksforgeeks.org/machine-learning/how-to-use-smote-for-imbalanced-data-in-r/
 
 
 ## Appendix
