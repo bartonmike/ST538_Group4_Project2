@@ -5,15 +5,54 @@ format: pdf
 ---
 
 
-This analysis uses the CRIF High Mark vehicle loan dataset to develop a feature set capable
+## Introduction to Dataset
+Vehicle loan default prediction presents a distinct set of challenges relative 
+to other retail credit products. Unlike mortgage or personal loan portfolios,
+two-wheeler financing in emerging markets such as India serves a large
+population of first-time borrowers with little or no bureau history, making
+traditional score-based underwriting insufficient on its own. This analysis
+uses the CRIF High Mark vehicle loan dataset to develop a feature set capable
 of identifying first-EMI default risk across both scored and thin-file borrower
-segments. The dataset is comprised of  233,154 disbursed loans with a binary default indicator
+segments.
+
+The dataset comprises 233,154 disbursed loans with a binary default indicator
 capturing payment failure on the first EMI due date. A notable characteristic
 of this population is that 56% of borrowers carry no scoreable bureau history,
 which necessitates treating thin-file and scored segments with care rather than
-imputing or ignoring the distinction. 
+imputing or ignoring the distinction. Among scored borrowers, the CRIF CNS
+score serves as the single strongest individual predictor and is encoded here
+as a 20-level ordered factor preserving the full risk ranking across bands.
+
+Feature engineering focuses on translating domain knowledge into model-ready
+variables: loan structure risk (LTV, implied down payment), borrower
+demographics (age at disbursement, employment type), identity verification
+depth (KYC document count), credit utilisation and delinquency history across
+primary and secondary accounts, EMI burden relative to existing obligations,
+and recent bureau activity including new account uptake and hard enquiries.
+
+A composite stress score aggregating six binary risk flags is also constructed
+as a diagnostic and interpretability aid. Initial cross-tabulation confirms
+that the stress score tracks default rate monotonically, rising from 15% at
+score 0 to 49% at score 5, providing early evidence that the engineered
+features carry meaningful signal.
 
 
+```{r}
+# Write a report based on the statistical analysis in this project. As described in the project outline page, write the report following those directions.
+# 
+# Submit a four-page (reasonable margins and font size) document that summarizes the elements listed below (preferably in separate sections).
+# 
+# Project/data background and the questions that you addressed.
+# Statistical analysis reported in the same framework as in interim reports -
+# -  feature selection,
+# -  predictive model fitting,
+# -  comparison of prediction results of the fitted models, specifically on the held-out test set created on Week 7 (if possible).
+# -  Obstacles you encountered and useful/interesting solutions to overcoming those obstacles. 
+# -  Conclusion with additional questions that you generated and/or future work that you could do with the data your team used.
+# 
+# Submit the completed report as a link in the relevant discussion.
+# The report should be at most four pages, not counting figures and R codes. Please include the R codes as an appendix to the report. 
+```
 
 
 
@@ -633,20 +672,20 @@ x_validation <- validation[, drop_cols]
 
 ```{r}
 #| echo: false
-#| include: false
-  # rf.sim1 = randomForest(training[,c(-1, -5, -7, -10, -11, -12, -13, -14, -17, -18, -19, -26, -27, -29, -31, -32, -33, -35, -56, -66, -41)], 
-  #                        factor(training$LOAN_DEFAULT))
+##| include: false
+   rf.sim1 = randomForest(training[,c(-1, -5, -7, -10, -11, -12, -13, -14, -17, -18, -19, -26, -27, -29, -31, -32, -33, -35, -56, -66, -41)], 
+                          factor(training$LOAN_DEFAULT))
 
 ```
 
 
 ```{r}
 #| echo: false
-#| include: false
-  # pred.rf.sim1 = rf.sim1$predicted
-  # table(training[,41], pred.rf.sim1)
-  # 
-  # varImpPlot(rf.sim1)
+##| include: false
+   pred.rf.sim1 = rf.sim1$predicted
+   table(training[,41], pred.rf.sim1)
+   
+   varImpPlot(rf.sim1)
   # 
 
   # #training |> filter(high_stress_flag == 1)
@@ -659,14 +698,14 @@ x_validation <- validation[, drop_cols]
 
 ```{r}
 #| echo: false
-#| include: false
-# pred.rf.sim1 <- predict(
-#   rf.sim1,
-#   newdata = x_validation,
-#   type = "class"
-# )
-# 
-# table(validation[,41], pred.rf.sim1)
+##| include: false
+ pred.val.rf.sim1 <- predict(
+   rf.sim1,
+   newdata = x_validation,
+   type = "class"
+ )
+ 
+ table(validation[,41], pred.val.rf.sim1)
 # 
 #   #  pred.rf.sim1
 #   #       0     1
@@ -677,40 +716,40 @@ x_validation <- validation[, drop_cols]
 
 ```{r}
 #| echo: false
-#| include: false
-# rf.sim2 <- randomForest(
-#   x = training[, c(-1, -5, -7, -10, -11, -12, -13,
-#                    -14, -17, -18, -19, -26, -27,
-#                    -29, -31, -32, -33, -35,
-#                    -56, -66, -41)],
-#   
-#   y = factor(training$LOAN_DEFAULT),
-# 
-#   ntree = 500,
-#   importance = TRUE
-# )
+##| include: false
+ rf.sim2 <- randomForest(
+   x = training[, c(-1, -5, -7, -10, -11, -12, -13,
+                    -14, -17, -18, -19, -26, -27,
+                    -29, -31, -32, -33, -35,
+                    -56, -66, -41)],
+   
+   y = factor(training$LOAN_DEFAULT),
+ 
+   ntree = 500,
+   importance = TRUE
+ )
 ```
 
 
 ```{r}
 #| echo: false
-#| include: false
+##| include: false
 # 
-# pred.rf.sim2 <- rf.sim2$predicted
-# table(training[,41], pred.rf.sim2)
-# # pred.rf.sim2
-# #         0     1
-# #   0 57132   387
-# #   1 14246   365
+ pred.rf.sim2 <- rf.sim2$predicted
+ table(training[,41], pred.rf.sim2)
+ # pred.rf.sim2
+ #         0     1
+ #   0 57132   387
+ #   1 14246   365
+ 
+ pred.val.rf.sim2 <- predict(
+   rf.sim2,
+   newdata = x_validation,
+   type = "class"
+ )
 # 
-# pred.rf.sim2 <- predict(
-#   rf.sim2,
-#   newdata = x_validation,
-#   type = "class"
-# )
 # 
-# 
-# table(validation[,41], pred.rf.sim2)
+ table(validation[,41], pred.val.rf.sim2)
 # 
 # 
 #   #  pred.rf.sim2
@@ -881,9 +920,16 @@ x_valid <- model.matrix(
   data = validation[, drop_cols]
 )
 
+x_test <- model.matrix(
+  ~ . - 1,
+  data = testing[, drop_cols]
+)
+
+
+
 y_train <- training$LOAN_DEFAULT
 y_valid <- validation$LOAN_DEFAULT
-
+y_test <- testing$LOAN_DEFAULT
 
 
 # Deal with the imbalance
@@ -901,6 +947,11 @@ dtrain <- xgb.DMatrix(
 dvalid <- xgb.DMatrix(
   data = x_valid,
   label = y_valid
+)
+
+dtest <- xgb.DMatrix(
+  data = x_test,
+  label = y_test
 )
 
 # Initial XGBoost model
@@ -999,6 +1050,294 @@ Next we trained XGBoost classifiers on our cleaned dataset. We did utilize the s
 ## Next Steps
 
 Based on our analysis, it is clear that the most pressing issue is to find a method to combat the imbalance present in our data. We may consider utilizing SMOTE or downsampling methods to compensate for this. https://www.geeksforgeeks.org/machine-learning/how-to-use-smote-for-imbalanced-data-in-r/
+
+```{r}
+# Applying SMOTE
+#install.packages("ROSE")
+library(ROSE)
+
+set.seed(2026)
+
+# use our drop_cols but add back in Loan default
+rose_drop_cols <- c(-1, -5, -7, -10, -11, -12, -13,
+               -14, -17, -18, -19, -26, -27,
+               -29, -31, -32, -33, -35,
+               -56, -66)
+
+# get our cleaned up data for SMOTE/ROSE
+train_dat_rose <- train_dat_normal[, rose_drop_cols]
+
+# We need to futher clean it, disbursal date is covered elsewhere
+train_dat_rose <- train_dat_normal[, rose_drop_cols] %>%
+  select(-disbursal_date) %>%
+  mutate(
+    LOAN_DEFAULT = factor(LOAN_DEFAULT),
+    cns_score_factor = factor(cns_score_factor)
+  ) %>%
+  na.omit()
+
+# Remove any character columns
+train_dat_rose <- train_dat_rose %>%
+  select(-where(is.character))
+
+# Make cns_score a true factor
+train_dat_rose$cns_score_factor <-
+  factor(train_dat_rose$cns_score_factor, ordered = FALSE)
+
+# get our count
+table(train_dat_rose$LOAN_DEFAULT)
+
+smote_data <- ROSE(
+  LOAN_DEFAULT ~ .,
+  data = train_dat_rose,
+  N = 40000,
+  p = 0.5
+)$data
+
+table(smote_data$LOAN_DEFAULT)
+```
+
+```{r}
+names(train_dat_rose)[sapply(train_dat_rose, is.character)]
+
+sapply(train_dat_rose, class)
+
+
+
+sum(!complete.cases(train_dat_rose))
+
+colSums(is.na(train_dat_rose))[colSums(is.na(train_dat_rose)) > 0]
+
+which(names(train_dat_rose) == "LOAN_DEFAULT")
+```
+
+```{r}
+#| echo: false
+#| include: false
+
+set.seed(2026)
+
+# Set our splits
+train_percent <- 0.7
+not_train_percent <- 0.3
+
+# not_train split up 
+validate_percent <- 0.5 # Ends up being 0.15
+test_percent <- 0.5 # Ends up being 0.15
+
+
+# splitting into train/not_train -   this had an error with nrow(train_dat) producing too long of a sample
+sample <- sample(c(TRUE, FALSE), nrow(train_dat_rose), replace=TRUE, prob=c(train_percent,not_train_percent))
+smote_training  <- train_dat_rose[sample, ]
+
+
+
+smote_not_training   <- train_dat_rose[!sample, ]
+
+# splitting into validation/test
+train_sample <- sample(c(TRUE, FALSE), nrow(not_training), replace=TRUE, prob=c(validate_percent,test_percent))
+smote_validation  <- smote_not_training[train_sample, ]
+smote_testing   <- smote_not_training[!train_sample, ]
+
+
+rbind(count(smote_training), count(smote_validation), count(smote_testing))
+
+# # Did they default?
+# train_dat |>
+#   summarise(
+#     defaulted_yes_overall = sum(LOAN_DEFAULT == 1),
+#     defaulted_no_overall = sum(LOAN_DEFAULT == 0)
+#     
+#   )
+# 
+# train |>
+#   summarise(
+#     defaulted_yes_train = sum(LOAN_DEFAULT == 1),
+#     defaulted_no_train = sum(LOAN_DEFAULT == 0)
+#   )
+# 
+# test |>
+#   summarise(
+#     defaulted_yes_test = sum(LOAN_DEFAULT == 1),
+#     defaulted_no_test = sum(LOAN_DEFAULT == 0)
+#     
+#   )
+```
+
+
+
+
+
+
+
+```{r}
+#| echo: false
+##| include: false
+   smote.rf.sim1 = randomForest(smote_training[,c(-19)], 
+                          factor(smote_training$LOAN_DEFAULT))
+
+```
+
+
+```{r}
+#| echo: false
+##| include: false
+   smote.pred.rf.sim1 = smote.rf.sim1$predicted
+   table(smote_training[,19], smote.pred.rf.sim1)
+  
+   varImpPlot(smote.rf.sim1)
+  
+
+   #training |> filter(high_stress_flag == 1)
+  
+   #    pred.rf.sim1
+   #       0     1
+   # 0 57124   395
+   # 1 14256   355
+```
+
+```{r}
+#| echo: false
+##| include: false
+ smote.pred.val.rf.sim1 <- predict(
+   smote.rf.sim1,
+   newdata = smote_validation,
+   type = "class"
+ )
+ 
+ table(smote_validation[,19], smote.pred.val.rf.sim1)
+# 
+#   #  pred.rf.sim1
+#   #       0     1
+#   # 0 12415    94
+#   # 1  3056    78
+```
+
+
+```{r}
+#| echo: false
+##| include: false
+ smote.rf.sim2 <- randomForest(
+   x = smote_training[, c(-19)],
+   
+   y = factor(smote_training$LOAN_DEFAULT),
+ 
+   ntree = 500,
+   importance = TRUE
+ )
+```
+
+
+```{r}
+#| echo: false
+##| include: false
+# 
+ smote.pred.rf.sim2 <- smote.rf.sim2$predicted
+ table(smote_training[,19], smote.pred.rf.sim2)
+ # pred.rf.sim2
+ #         0     1
+ #   0 57132   387
+ #   1 14246   365
+ 
+ smote.pred.val.rf.sim2 <- predict(
+   smote.rf.sim2,
+   newdata = smote_validation,
+   type = "class"
+ )
+ 
+ 
+ table(smote_validation[,19], smote.pred.val.rf.sim2)
+# 
+# 
+#   #  pred.rf.sim2
+#   #       0     1
+#   # 0 12407   102
+#   # 1  3058    76
+```
+
+```{r}
+# Lets see how it does on our test data.
+
+
+
+# Test Data on random forest 1
+ pred.test.rf.sim1 <- predict(
+   rf.sim1,
+   newdata = testing[, c(-1, -5, -7, -10, -11, -12, -13,
+                    -14, -17, -18, -19, -26, -27,
+                    -29, -31, -32, -33, -35,
+                    -56, -66, -41)],
+   type = "class"
+ )
+ table(testing[,41], pred.test.rf.sim1)
+
+# Test Data on random forest 2 
+ pred.test.rf.sim2 <- predict(
+   rf.sim2,
+   newdata = testing[, c(-1, -5, -7, -10, -11, -12, -13,
+                    -14, -17, -18, -19, -26, -27,
+                    -29, -31, -32, -33, -35,
+                    -56, -66, -41)],
+   type = "class"
+ )
+ table(testing[,41], pred.test.rf.sim2)
+
+
+
+
+
+
+# Test Data on smote random forest 1
+ smote.pred.test.rf.sim1 <- predict(
+   smote.rf.sim1,
+   newdata = smote_testing,
+   type = "class"
+ )
+ table(smote_testing[,19], smote.pred.test.rf.sim1)
+
+# Test Data on smote random forest 2 
+ smote.pred.test.rf.sim2 <- predict(
+   smote.rf.sim2,
+   newdata = smote_testing,
+   type = "class"
+ )
+ table(smote_testing[,19], smote.pred.test.rf.sim2)
+ 
+ 
+ 
+# XGB Score on the test data 
+test_prob <- predict(xgb_model, dtest)
+
+test_class <- ifelse(test_prob > 0.30, 1, 0)
+
+# 
+conf_mat <- table(
+  Actual = x_test,
+  Predicted = y_test
+)
+
+# 
+kable(as.data.frame.matrix(conf_mat),
+      caption = "Confusion Matrix")
+```
+
+
+
+```{r}
+# Lets compare all the methods together
+
+ggplot
+```
+
+
+
+
+
+## Obstacles 
+A major hurdle we encountered in the project was finding a model that fit the data well and would make accurate classifications on both default and non default data. Random forest would make accurate non-default forecasting, but would perform poorly on loans that defaulted. XGBoost at the standard threshold performed well on loans that defaulted, but not on loans that didn't. While Smote is commonly suggested as a mitigator for unbalanced data, it may not have been needed for a dataset as large as ours, and ended up only marginally decreasing our prediction errors.
+
+## Conclusion
+
 
 
 ## Appendix
