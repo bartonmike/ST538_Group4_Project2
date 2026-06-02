@@ -103,18 +103,30 @@ sapply(train_dat, anyNA)
 
 ## Feature extraction and description
 
-Feature engineering focuses on translating domain knowledge into model-ready
+First we took a cursory look at the dataset and certain key variables
+
+```{r}
+  #add graphs to demonstrate everything in the paragraph below
+  
+  #high loan to value
+  #thin file defaults
+  #age bands default vs no default
+
+```
+
+
+Thirty-five percent of loans are high loan to value (LTV) of >80%, combined with a large portion of borrowers having thin credit history (%), it shows a meaningful concentration of risk. The vast majority (94%) of borrowers fall in the prime age band, 13,812 young borrowers (<22 years of age) are worth watching. Fifty-six percent of borrowers are "thin file" meaning they have <12 month of credit history. This makes sense, in India about half of first time car buyers are using lending for the first time. Since thin and normal are two different populations, we debated on splitting the dataset and creating a model for thin credit and one for normal. Ultimately we decided it would be better to focus our efforts on normal only as the model will likely suffer trying to work on both. 
+
+After initial examination of this dataset, we were again reminded of the high dimensionality of each observation. We wanted to be able to focus on important features. Given the size of the dataset will already impact the speed of analytical methods, we want to remove as many unncessary variables as possible. Additionally, there are several columns with missing values or continuous variables that would serve better on translating into categories. 
+
+As such, our feature engineering focused on  translating domain knowledge into model-ready
 variables: loan structure risk (LTV, implied down payment), borrower
 demographics (age at disbursement, employment type), identity verification
 depth (KYC document count), credit utilisation and delinquency history across
 primary and secondary accounts, EMI burden relative to existing obligations,
 and recent bureau activity including new account uptake and hard enquiries.
 
-We construct a composite stress score aggregating six binary risk flags is also constructed
-as a diagnostic and interpretability aid. Initial cross-tabulation confirms
-that the stress score tracks default rate monotonically, rising from 15% at
-score 0 to 49% at score 5, providing early evidence that the engineered
-features carry meaningful signal.
+
 
 ```{r}
 #| include: false
@@ -369,6 +381,8 @@ train_dat <- train_dat %>%
 ```
 
 
+
+
 ```{r}
 #| include: false
 #| echo: false
@@ -450,6 +464,19 @@ knitr::kable(
 )
 ```
 
+To consolidate variables, we constructed a composite stress score aggregating six binary risk flags to function as a diagnostic and interpretability aid. The six flags are added together to create the score (0 - 5), with the variables chosen as risk indicators. These six flags are:
+  - client has an overdue primary account
+  - client has an overdue secondary account
+  - client has had account delinquincy in the last 6 months
+  - client has loan-to-value level about 80%
+  - client has less than 12 months of credit history
+  - client has one of 7 risk assessments marked 
+Additionally, we mutated a  Boolean variable "high_stress_flag" that is marked as positive if the stress score is 3 or more.
+
+Initial cross-tabulation confirms
+that the stress score tracks default rate monotonically, rising from 15% at
+score 0 to 49% at score 5, providing early evidence that the engineered
+features carry meaningful signal.
 
 ```{r}
 #| echo: false
@@ -493,9 +520,9 @@ ggplot(stress_summary, aes(x = factor(stress_score))) +
     x     = "Stress score"
   )
 ```
-Thirty-five percent of loans are high loan to value (LTV) of >80%, combined with a large portion of borrowers having thin credit history (%), it shows a meaningful concentration of risk. The vast majority (94%) of borrowers fall in the prime age band, 13,812 young borrowers (<22 years of age) are worth watching. Fifty-six percent of borrowers are "thin file" meaning they have <12 month of credit history. This makes sense, in India about half of first time car buyers are using lending for the first time. Thin and normal are two different populations, we may want to split the dataset and create a model for thin credit and one for normal, or focus our efforts on normal only--the model will likely suffer trying to work on both. 
 
-Stress score is working well as a risk signal. Default raises from 15% at score 0 to ~49% at score 5 (3x). Most of the population sits at 2 (21% default), probably thin-file + high-LTV, but no active delinquncy.The jump from 2 to 3 is steep (21-29%), pri_any_overdue_flag and/or recent_delinquncy_flag are likely doing a lot of work. Scores 4 and 5 are small segments with high default rates (42-49%), it's really up to us if we want to keep them, probably should. Score 0 is not zero (15.1%), even the cleanest borrowers carry default risk. We can use this stress_score as a standalone feature, but it's worth noting that components might actually capture more non-linear interactions than the score itself.
+
+Through this figure, we can see that stress score is working well as a risk signal. The refault rate raises from 15% at score 0 to ~49% at score 5 (3x). Most of the population sits at 2 (21% default), probably thin-file + high-LTV, but no active delinquency.The jump from 2 to 3 is steep (21-29%), pri_any_overdue_flag and/or recent_delinquency_flag are likely doing a lot of work. Scores 4 and 5 are small segments with high default rates (42-49%), it's really up to us if we want to keep them, probably should. Score 0 is not zero (15.1%), even the cleanest borrowers carry default risk. We can use this stress_score as a standalone feature, but it's worth noting that components might actually capture more non-linear interactions than the score itself.
 
 
 
@@ -1320,7 +1347,7 @@ kable(as.data.frame.matrix(conf_mat),
 ```{r}
 # Lets compare all the methods together
 
-ggplot
+#ggplot
 ```
 
 
@@ -1328,8 +1355,9 @@ ggplot
 
 
 # Obstacles 
+There are several complications with this dataset. One is in the variety of data. Files marked as "thin file" with little credit history had different demographic patterns and higher default rates, enough to the point we considered splitting the dataset into two populations. We tried to compensate with the steps we took in feature engineering. There was also the size of the dataset. The sheer number of observations means that running our analysis took significantly longer as certain methods take five minutes to compile and check results. The size coupled with the dimensionality meant some functions relating to random forest couldn't be used at all on our devices. We compensated for this by consolidating features and using methods with LASSO to remove excess data before passing to functions. 
 
-The most major issue we encountered was due to the unbalanced data, as there a much higher number of defaults compared to non-defaults. The exact ratio is . Different models we trained on the data handled the different categorizes of data inconsistently. Random forest would make accurate non-default forecasting, but would perform poorly on loans that defaulted. XGBoost at the standard threshold performed well on loans that defaulted, but not on loans that didn't. We had decided to use SMOTE methods, as those are commonly suggested as a mitigator for unbalanced data. However, when we implemented this in our dataset it only marginally decreased our prediction errors. One possible issue might have been the size of our dataset and it's impbalance might have limited this methods effectiveness. 
+The most major issue we encountered was due to the unbalanced data, as there a much higher number of defaults compared to non-defaults. The exact ratio is . Different models we trained on the data handled the different categorizes of data inconsistently. Random forest would make accurate non-default forecasting, but would perform poorly on loans that defaulted. XGBoost at the standard threshold performed well on loans that defaulted, but not on loans that didn't. We had decided to use SMOTE methods, as those are commonly suggested as a mitigator for unbalanced data. However, when we implemented this in our dataset it only marginally decreased our prediction errors. One possible issue might have been the size of our dataset and it's imbalance might have limited this methods effectiveness. 
 
 
 
@@ -1338,7 +1366,8 @@ The most major issue we encountered was due to the unbalanced data, as there a m
 
 
 ## Next Steps  we should talk about next steps here
-
+There are several futher steps we could take with our exploration.
+One potential idea was to fully treat Thin File and normal file as separate populations, and try training two separate models for each and seeing if we are able to have better predictive accuracy
 
 
 Based on our analysis, it is clear that the most pressing issue is to find a method to combat the imbalance present in our data. We may consider utilizing SMOTE or downsampling methods to compensate for this. https://www.geeksforgeeks.org/machine-learning/how-to-use-smote-for-imbalanced-data-in-r/
