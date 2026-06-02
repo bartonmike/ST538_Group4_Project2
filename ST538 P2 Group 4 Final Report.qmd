@@ -5,9 +5,8 @@ format: pdf
 ---
 
 
-## Introduction to Dataset
-Vehicle loan default prediction presents a distinct set of challenges relative 
-to other retail credit products. Unlike mortgage or personal loan portfolios,
+# Dataset Background
+Our project is focused on predicting whether a customer for a Vehicle Loan will default based on their financial state at time of borrowing. Default Vehicle loan will default prediction presents a distinct set of challenges relative to other retail credit products. Unlike mortgage or personal loan portfolios,
 two-wheeler financing in emerging markets such as India serves a large
 population of first-time borrowers with little or no bureau history, making
 traditional score-based underwriting insufficient on its own. This analysis
@@ -15,7 +14,9 @@ uses the CRIF High Mark vehicle loan dataset to develop a feature set capable
 of identifying first-EMI default risk across both scored and thin-file borrower
 segments.
 
-The dataset comprises 233,154 disbursed loans with a binary default indicator
+This analysis uses the CRIF High Mark vehicle loan dataset to develop a feature set capable
+of identifying first-EMI default risk across both scored and thin-file borrower
+segments. The dataset comprises 233,154 disbursed loans with a binary default indicator
 capturing payment failure on the first EMI due date. A notable characteristic
 of this population is that 56% of borrowers carry no scoreable bureau history,
 which necessitates treating thin-file and scored segments with care rather than
@@ -23,18 +24,7 @@ imputing or ignoring the distinction. Among scored borrowers, the CRIF CNS
 score serves as the single strongest individual predictor and is encoded here
 as a 20-level ordered factor preserving the full risk ranking across bands.
 
-Feature engineering focuses on translating domain knowledge into model-ready
-variables: loan structure risk (LTV, implied down payment), borrower
-demographics (age at disbursement, employment type), identity verification
-depth (KYC document count), credit utilisation and delinquency history across
-primary and secondary accounts, EMI burden relative to existing obligations,
-and recent bureau activity including new account uptake and hard enquiries.
 
-A composite stress score aggregating six binary risk flags is also constructed
-as a diagnostic and interpretability aid. Initial cross-tabulation confirms
-that the stress score tracks default rate monotonically, rising from 15% at
-score 0 to 49% at score 5, providing early evidence that the engineered
-features carry meaningful signal.
 
 
 ```{r}
@@ -109,6 +99,8 @@ sapply(train_dat, anyNA)
 ```
 
 
+# Statistical Analysis
+
 ## Feature extraction and description
 
 Feature engineering focuses on translating domain knowledge into model-ready
@@ -118,7 +110,7 @@ depth (KYC document count), credit utilisation and delinquency history across
 primary and secondary accounts, EMI burden relative to existing obligations,
 and recent bureau activity including new account uptake and hard enquiries.
 
-A composite stress score aggregating six binary risk flags is also constructed
+We construct a composite stress score aggregating six binary risk flags is also constructed
 as a diagnostic and interpretability aid. Initial cross-tabulation confirms
 that the stress score tracks default rate monotonically, rising from 15% at
 score 0 to 49% at score 5, providing early evidence that the engineered
@@ -573,7 +565,7 @@ cbind(count(train_dat_normal),count(train_dat_thin))
 ```
 
 
-## Building Classifiers and Results
+## Predictive Model Fitting
 
 After feature extraction and variable selection, we split the dataset into training, validation, and testing subsets using a 70/15/15 split, resulting in approximately 72,000 observations in the training set and 15,000 observations each in the validation and testing sets.
 
@@ -816,6 +808,10 @@ x_validation <- validation[, drop_cols]
 # )
 ```
 
+
+
+
+
 ```{r}
 #| echo: false
 #| include: false
@@ -1047,9 +1043,7 @@ Next we trained XGBoost classifiers on our cleaned dataset. We did utilize the s
 
 
 
-## Next Steps
 
-Based on our analysis, it is clear that the most pressing issue is to find a method to combat the imbalance present in our data. We may consider utilizing SMOTE or downsampling methods to compensate for this. https://www.geeksforgeeks.org/machine-learning/how-to-use-smote-for-imbalanced-data-in-r/
 
 ```{r}
 # Applying SMOTE
@@ -1321,7 +1315,7 @@ kable(as.data.frame.matrix(conf_mat),
       caption = "Confusion Matrix")
 ```
 
-
+## Comparison of Predicted Results
 
 ```{r}
 # Lets compare all the methods together
@@ -1333,10 +1327,21 @@ ggplot
 
 
 
-## Obstacles 
-A major hurdle we encountered in the project was finding a model that fit the data well and would make accurate classifications on both default and non default data. Random forest would make accurate non-default forecasting, but would perform poorly on loans that defaulted. XGBoost at the standard threshold performed well on loans that defaulted, but not on loans that didn't. While Smote is commonly suggested as a mitigator for unbalanced data, it may not have been needed for a dataset as large as ours, and ended up only marginally decreasing our prediction errors.
+# Obstacles 
 
-## Conclusion
+The most major issue we encountered was due to the unbalanced data, as there a much higher number of defaults compared to non-defaults. The exact ratio is . Different models we trained on the data handled the different categorizes of data inconsistently. Random forest would make accurate non-default forecasting, but would perform poorly on loans that defaulted. XGBoost at the standard threshold performed well on loans that defaulted, but not on loans that didn't. We had decided to use SMOTE methods, as those are commonly suggested as a mitigator for unbalanced data. However, when we implemented this in our dataset it only marginally decreased our prediction errors. One possible issue might have been the size of our dataset and it's impbalance might have limited this methods effectiveness. 
+
+
+
+# Conclusion
+
+
+
+## Next Steps  we should talk about next steps here
+
+
+
+Based on our analysis, it is clear that the most pressing issue is to find a method to combat the imbalance present in our data. We may consider utilizing SMOTE or downsampling methods to compensate for this. https://www.geeksforgeeks.org/machine-learning/how-to-use-smote-for-imbalanced-data-in-r/
 
 
 
