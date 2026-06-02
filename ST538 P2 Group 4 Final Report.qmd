@@ -106,7 +106,11 @@ sapply(train_dat, anyNA)
 First we took a cursory look at the dataset and certain key variables
 
 ```{r}
-  head(train_dat)
+
+
+#| message: FALSE
+#| warning: FALSE
+  #head(train_dat)
   #add graphs to demonstrate everything in the paragraph below
   
   #high loan to value
@@ -115,15 +119,31 @@ First we took a cursory look at the dataset and certain key variables
   library(ggplot2)
   train_dat |>  
     filter(LOAN_DEFAULT == 1) |>
-    ggplot(aes(factor(age_at_disbursal), LTV)) + geom_boxplot()
+    ggplot(aes(factor(age_at_disbursal), LTV)) + 
+    geom_boxplot(color = 'red') + 
+    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
+    ggtitle("LTV Distribution by Age for Defaulted Loans") +
+    theme(plot.title = element_text(hjust = 0.5))
+
+
+
+    
   
   train_dat |>  
     filter(LOAN_DEFAULT == 0) |>
-    ggplot(aes(factor(age_at_disbursal), LTV)) + geom_boxplot()
+    ggplot(aes(factor(age_at_disbursal), LTV)) + 
+    geom_boxplot(color = 'blue')+ 
+    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
+    ggtitle("LTV Distribution by Age for Active Loans") +
+    theme(plot.title = element_text(hjust = 0.5))
   
   train_dat |>  
     filter(LOAN_DEFAULT == 1) |>
-    ggplot(aes(credit_history_months)) + geom_histogram()
+    ggplot(aes(credit_history_months)) + 
+    geom_histogram(bins = 30) + 
+    labs(x = "Months of Credit History", y = "Number of Defaulted Borrowers") +
+    ggtitle("Defaulted Borrowers by Months of Credit History") +
+    theme(plot.title = element_text(hjust = 0.5))
   
 ```
 
@@ -1364,7 +1384,7 @@ kable(as.data.frame.matrix(conf_mat),
 ```
 
 
-
+Full discussion of results
 
 
 # Obstacles 
@@ -1375,15 +1395,14 @@ The most major issue we encountered was due to the unbalanced data, as there a m
 
 
 # Conclusion
-
+In conclusion, while it is possible to fit many different models to our data, we can see how hard in practice it is to make an effective model, especially in situations with large datasets and imbalanced categories. As is inherent, there is a much smaller number of defaulted borrowers, but that disproportionate amounts means it is harder to utilize methods to accurate predict whether any specific borrowers will default. Different methods had different accuracy between defaults and non-defaults. We did get to experiment with a number of techniques in this project but ultimately none of them really improved the results to the expected level.
 
 
 ## Next Steps  we should talk about next steps here
-There are several futher steps we could take with our exploration.
+There are several further steps we could take with our exploration.
 One potential idea was to fully treat Thin File and normal file as separate populations, and try training two separate models for each and seeing if we are able to have better predictive accuracy
 
 
-Based on our analysis, it is clear that the most pressing issue is to find a method to combat the imbalance present in our data. We may consider utilizing SMOTE or downsampling methods to compensate for this. https://www.geeksforgeeks.org/machine-learning/how-to-use-smote-for-imbalanced-data-in-r/
 
 
 
