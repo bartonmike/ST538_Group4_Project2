@@ -106,12 +106,25 @@ sapply(train_dat, anyNA)
 First we took a cursory look at the dataset and certain key variables
 
 ```{r}
+  head(train_dat)
   #add graphs to demonstrate everything in the paragraph below
   
   #high loan to value
   #thin file defaults
   #age bands default vs no default
-
+  library(ggplot2)
+  train_dat |>  
+    filter(LOAN_DEFAULT == 1) |>
+    ggplot(aes(factor(age_at_disbursal), LTV)) + geom_boxplot()
+  
+  train_dat |>  
+    filter(LOAN_DEFAULT == 0) |>
+    ggplot(aes(factor(age_at_disbursal), LTV)) + geom_boxplot()
+  
+  train_dat |>  
+    filter(LOAN_DEFAULT == 1) |>
+    ggplot(aes(credit_history_months)) + geom_histogram()
+  
 ```
 
 
