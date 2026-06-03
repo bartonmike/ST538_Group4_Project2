@@ -714,7 +714,9 @@ x_testing <- testing[, drop_cols]
 #| label: randomforest-model1
  #| echo: FALSE
  #| include: FALSE
-    rf.sim1 = randomForest(training[drop_cols], 
+ #| eval: FALSE
+ 
+ rf.sim1 = randomForest(training[drop_cols], 
                            factor(training$LOAN_DEFAULT))
 
 ```
@@ -724,6 +726,9 @@ x_testing <- testing[, drop_cols]
 #| label: randomforest-model1-pred-validation
  #| echo: FALSE
  #| include: FALSE
+ #| eval: FALSE
+
+
     pred.rf.sim1 = rf.sim1$predicted
     table(training[,41], pred.rf.sim1)
     
@@ -756,6 +761,7 @@ First, we tried fitting a default random forest classifier to the training data 
 
 ```{r}
 #| label: randomforest-model1-diagnostics
+#| eval: FALSE
 #| fig.height: 8
 #| fig.width: 6
 # Theoretically meaningful variables — highlighted regardless of Gini rank
@@ -808,6 +814,7 @@ Running diagnostics on the default random forest model, we observed that the var
 
 ```{r}
 #| label: randomforest-model2
+#| eval: FALSE
 rf.sim2 = randomForest(
   training[drop_cols],
   factor(training$LOAN_DEFAULT),
@@ -818,10 +825,62 @@ rf.sim2 = randomForest(
 
 ```{r}
 #| label: randomforest-model2-graph
+#| eval: FALSE
 # graph the output on accuracy score
 varImpPlot(rf.sim2, type = 1)
 ```
 
+
+
+```{r}
+#| label: randomforest-model2-diagnostics
+#| eval: FALSE
+#| fig.height: 8
+#| fig.width: 6
+# Theoretically meaningful variables — highlighted regardless of Gini rank
+highlight_vars <- c(
+  "PERFORM_CNS_SCORE",
+  "PERFORM_CNS_SCORE_DESCRIPTION",
+  "stress_score",
+  "recent_delinquency_flag",
+  "pri_any_overdue_flag",
+  "DELINQUENT_ACCTS_IN_LAST_SIX_MONTHS",
+  "credit_history_months",
+  "avg_acct_age_months",
+  "ltv_high_flag",
+  "pri_leverage_ratio"
+)
+ 
+# Pull importance scores from model object
+imp_df <- importance(rf.sim2) |>
+  as.data.frame() |>
+  rownames_to_column("Feature") |>
+  arrange(MeanDecreaseGini) |>
+  mutate(
+    Feature    = factor(Feature, levels = Feature),
+    Highlighted = ifelse(Feature %in% highlight_vars, "Key predictors", "Other")
+  )
+ 
+ggplot(imp_df, aes(x = MeanDecreaseGini, y = Feature, fill = Highlighted)) +
+  geom_col() +
+  scale_fill_manual(
+    values = c("Key predictors" = "steelblue", "Other" = "grey75"),
+    name   = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    axis.text.y      = element_text(size = 8),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    legend.position  = "top",
+    plot.title       = element_text(size = 12)
+  ) +
+  labs(
+    title = "RF2 Variable Importance",
+    x     = "Mean Decrease Gini",
+    y     = NULL
+  )
+```
 
 
 
@@ -830,6 +889,17 @@ varImpPlot(rf.sim2, type = 1)
 #| label: randomforest-model2-pred-validation
  #| echo: FALSE
  #| include: TRUE
+ #| eval: FALSE
+
+    pred.rf.sim2 = rf.sim2$predicted
+    table(training[,41], pred.rf.sim2)
+  #   
+  #    pred.rf.sim2
+  #       0     1
+  # 0 39958 17561
+  # 1  6416  8195
+
+
   pred.val.rf.sim2 <- predict(
     rf.sim2,
     newdata = x_validation,
@@ -838,58 +908,15 @@ varImpPlot(rf.sim2, type = 1)
   
   table(validation[,41], pred.val.rf.sim2)
  # 
- #   #  pred.rf.sim1
- #   #       0     1
- #   # 0 12415    94
- #   # 1  3056    78
+# pred.val.rf.sim2
+#        0    1
+#   0 8611 3898
+#   1 1396 1738
 ```
 The resulting model showed a better balance of true positives and true negatives..
 
-NEEDS MORE
+NEEDS MORE COWBELL
 
-
-```{r}
-#| label: randomforest-old-model2
-# #| echo: FALSE
-# #| include: FALSE
-#  rf.sim2 <- randomForest(
-#    x = training[drop_cols],
-#    
-#    y = factor(training$LOAN_DEFAULT),
-#  
-#    ntree = 500,
-#    importance = TRUE
-#  )
-```
-
-
-```{r}
-#| label: randomforest-old-model2-prediction
-# #| echo: FALSE
-# #| include: FALSE
-# # 
-#  pred.rf.sim2 <- rf.sim2$predicted
-#  table(training[,41], pred.rf.sim2)
-#  # pred.rf.sim2
-#  #         0     1
-#  #   0 57132   387
-#  #   1 14246   365
-#  
-#  pred.val.rf.sim2 <- predict(
-#    rf.sim2,
-#    newdata = x_validation,
-#    type = "class"
-#  )
-# # 
-# # 
-#  table(validation[,41], pred.val.rf.sim2)
-# # 
-# # 
-# #   #  pred.rf.sim2
-# #   #       0     1
-# #   # 0 12407   102
-# #   # 1  3058    76
-```
 
 
 
@@ -897,19 +924,20 @@ NEEDS MORE
 #| label: randomforest-model-setup
 #| echo: FALSE
 #| include: FALSE
+#| eval: FALSE
 
 # https://www.statology.org/random-forest-in-r/
 # Trying to optimize with RFTune
 # Commented out to allow the doc to render faster
-# tune.rf <- tuneRF(
-#   x = training[, drop_cols],
-#   
-#   y = factor(training$LOAN_DEFAULT),
-# 
-#   stepFactor = 1.5,
-#   improve = 0.01,
-#   ntreeTry = 300
-# )
+tune.rf <- tuneRF(
+  x = training[, drop_cols],
+
+  y = factor(training$LOAN_DEFAULT),
+
+  stepFactor = 1.5,
+  improve = 0.01,
+  ntreeTry = 300
+)
 ```
 
 
@@ -917,21 +945,22 @@ NEEDS MORE
 #| label: randomforest-model-rftune
 #| echo: FALSE
 #| include: FALSE
+#| eval: FALSE
 
 # Commented out to allow the doc to render faster
-# best.mtry <- tune.rf[which.min(tune.rf[,2]),1]
+ best.mtry <- tune.rf[which.min(tune.rf[,2]),1]
 # 
-# rf.final <- randomForest(
-#   x = training[, drop_cols],
-#   y = factor(training$LOAN_DEFAULT),
-# 
-#   ntree = 1000,
-#   mtry = best.mtry,
-# 
-#   importance = TRUE,
-# 
-#   sampsize = c(10000, 10000)
-# )
+rf.final <- randomForest(
+  x = training[, drop_cols],
+  y = factor(training$LOAN_DEFAULT),
+
+  ntree = 1000,
+  mtry = best.mtry,
+
+  importance = TRUE,
+
+  sampsize = c(10000, 10000)
+)
 ```
 
 
@@ -942,23 +971,24 @@ NEEDS MORE
 #| label: randomforest-model-rftune-prediction
 #| echo: FALSE
 #| include: FALSE
+#| eval: FALSE
 
-# # Commented out to allow the doc to render faster
-#   pred.rf.final = rf.final$predicted
-#   table(training[,41], pred.rf.final)
-#   # pred.rf.final
-#   #       0     1
-#   # 0 43542 13977
-#   # 1  7518  7093  
-  
-#   pred.rf.final <- predict(
-#   rf.final,
-#   newdata = x_validation,
-#   type = "class"
-# )
-# 
-# 
-# table(validation[,41], pred.rf.final)
+ # # Commented out to allow the doc to render faster
+   pred.rf.final = rf.final$predicted
+   table(training[,41], pred.rf.final)
+   # pred.rf.final
+ #   #       0     1
+ #   # 0 43542 13977
+ #   # 1  7518  7093
+ # 
+   pred.rf.final <- predict(
+   rf.final,
+   newdata = x_validation,
+   type = "class"
+ )
+ # 
+ # 
+  table(validation[,41], pred.rf.final)
 # 
 #   # pred.rf.final
 #   #      0    1
@@ -978,11 +1008,11 @@ rf_results <- tribble(
   "rf.sim1", "Training",   57124, 395, 14256, 355,
   "rf.sim1", "Validation", 12415, 94, 3056, 78,
 
-  "rf.sim2", "Training",   57132, 387, 14246, 365,
-  "rf.sim2", "Validation", 12407, 102, 3058, 76,
+  "rf.sim2", "Training", 39958, 17561, 6416, 8195,
+  "rf.sim2", "Validation", 8613, 3896, 1397, 1737,
 
-  "rf.final", "Training",  43542, 13977, 7518, 7093,
-  "rf.final", "Validation", 9345, 3164, 1646, 1488
+  "rftune", "Training",  43542, 13977, 7518, 7093,
+  "rftune", "Validation", 9345, 3164, 1646, 1488
 ) %>%
   mutate(
     Accuracy = (TP + TN) / (TP + TN + FP + FN),
@@ -1020,72 +1050,73 @@ We also explored additional tuning strategies including the use of tuneRF() to o
 #| include: FALSE
 #| warning: FALSE
 #| echo: FALSE
+#| eval: FALSE
 
 # # XG Boost
 # 
 # # convert to matrices
-# x_train <- model.matrix(
-#   ~ . - 1,
-#   data = training[, drop_cols]
-# )
-# 
-# x_valid <- model.matrix(
-#   ~ . - 1,
-#   data = validation[, drop_cols]
-# )
-# 
-# x_test <- model.matrix(
-#   ~ . - 1,
-#   data = testing[, drop_cols]
-# )
-# 
-# 
-# 
-# y_train <- training$LOAN_DEFAULT
-# y_valid <- validation$LOAN_DEFAULT
-# y_test <- testing$LOAN_DEFAULT
-# 
-# 
-# # Deal with the imbalance
-# scale_pos_weight <- sum(y_train == 0) / sum(y_train == 1)
-# 
-# scale_pos_weight
-# 
-# 
-# # Training matrices
-# dtrain <- xgb.DMatrix(
-#   data = x_train,
-#   label = y_train
-# )
-# 
-# dvalid <- xgb.DMatrix(
-#   data = x_valid,
-#   label = y_valid
-# )
-# 
-# dtest <- xgb.DMatrix(
-#   data = x_test,
-#   label = y_test
-# )
-# 
-# # Initial XGBoost model
-# params <- list(
-#   objective = "binary:logistic",
-#   eval_metric = "auc",
-#   max_depth = 6,
-#   eta = 0.05,
-#   subsample = 0.8,
-#   colsample_bytree = 0.8,
-#   scale_pos_weight = scale_pos_weight
-# )
-# 
-# xgb_model <- xgb.train(
-#   params = params,
-#   data = dtrain,
-#   nrounds = 300,
-#   watchlist = list(train = dtrain, validation = dvalid),
-#   #verbose = 1
-# )
+x_train <- model.matrix(
+  ~ . - 1,
+  data = training[, drop_cols]
+)
+
+x_valid <- model.matrix(
+  ~ . - 1,
+  data = validation[, drop_cols]
+)
+
+x_test <- model.matrix(
+  ~ . - 1,
+  data = testing[, drop_cols]
+)
+
+
+
+y_train <- training$LOAN_DEFAULT
+y_valid <- validation$LOAN_DEFAULT
+y_test <- testing$LOAN_DEFAULT
+
+
+# Deal with the imbalance
+scale_pos_weight <- sum(y_train == 0) / sum(y_train == 1)
+
+scale_pos_weight
+
+
+# Training matrices
+dtrain <- xgb.DMatrix(
+  data = x_train,
+  label = y_train
+)
+
+dvalid <- xgb.DMatrix(
+  data = x_valid,
+  label = y_valid
+)
+
+dtest <- xgb.DMatrix(
+  data = x_test,
+  label = y_test
+)
+
+# Initial XGBoost model
+params <- list(
+  objective = "binary:logistic",
+  eval_metric = "auc",
+  max_depth = 6,
+  eta = 0.05,
+  subsample = 0.8,
+  colsample_bytree = 0.8,
+  scale_pos_weight = scale_pos_weight
+)
+
+xgb_model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 300,
+  watchlist = list(train = dtrain, validation = dvalid),
+  #verbose = 1
+)
 
 
 ```
@@ -1094,25 +1125,30 @@ We also explored additional tuning strategies including the use of tuneRF() to o
 #| label: xgboost-model1-prediction
 #| warning: FALSE
 #| echo: FALSE
+#| eval: FALSE
 # # Get predictions
-# pred_prob <- predict(xgb_model, dvalid)
-# 
-# pred_class <- ifelse(pred_prob > 0.30, 1, 0)
-# 
-# conf_mat <- table(
-#   Actual = y_valid,
-#   Predicted = pred_class
-# )
-# 
-# kable(as.data.frame.matrix(conf_mat),
-#       caption = "Confusion Matrix")
+ pred_prob <- predict(xgb_model, dvalid)
+ 
+ pred_class <- ifelse(pred_prob > 0.30, 1, 0)
+ 
+ conf_mat <- table(
+   Actual = y_valid,
+   Predicted = pred_class
+ )
+ 
+ kable(as.data.frame.matrix(conf_mat),
+       caption = "Confusion Matrix")
 
 
 # Confusion Matrix
 # 0	1
 # 0	11792	717
 # 1	2971	163
+```
 
+
+```{r}
+#| label: xgboost-model1-prediction-static-table
 
 conf_xgb <- matrix(
   c(11792, 717,
@@ -1149,41 +1185,42 @@ knitr::kable(
 #| label: xgboost-model1-diagnostics
 #| warning: FALSE
 #| echo: FALSE
+#| eval: FALSE
 
-# thresholds <- c(0.10, 0.15, 0.20, 0.25, 0.30)
-# 
-# xgb_threshold_results <- lapply(thresholds, function(t) {
-#   pred_class <- ifelse(pred_prob > t, 1, 0)
-#   tab <- table(
-#     Actual = y_valid,
-#     Predicted = pred_class
-#   )
-# 
-#   TN <- tab["0", "0"]
-#   FP <- tab["0", "1"]
-#   FN <- tab["1", "0"]
-#   TP <- tab["1", "1"]
-# 
-#   data.frame(
-#     Threshold = t,
-#     Accuracy = (TP + TN) / sum(tab),
-#     Recall = TP / (TP + FN),
-#     Precision = TP / (TP + FP),
-#     Specificity = TN / (TN + FP),
-#     F1 = 2 * ((TP / (TP + FP)) * (TP / (TP + FN))) /
-#       ((TP / (TP + FP)) + (TP / (TP + FN)))
-#   )
-# }) |> 
-#   bind_rows()
-# 
-# knitr::kable(
-#   xgb_threshold_results,
-#   format      = "simple",
-#   align       = c("c", "r", "r", "r", "r", "r"),
-#   caption     = "XGBoost Peformance by Threshold"
-# )
+thresholds <- c(0.10, 0.15, 0.20, 0.25, 0.30)
 
-# 
+xgb_threshold_results <- lapply(thresholds, function(t) {
+  pred_class <- ifelse(pred_prob > t, 1, 0)
+  tab <- table(
+    Actual = y_valid,
+    Predicted = pred_class
+  )
+
+  TN <- tab["0", "0"]
+  FP <- tab["0", "1"]
+  FN <- tab["1", "0"]
+  TP <- tab["1", "1"]
+
+  data.frame(
+    Threshold = t,
+    Accuracy = (TP + TN) / sum(tab),
+    Recall = TP / (TP + FN),
+    Precision = TP / (TP + FP),
+    Specificity = TN / (TN + FP),
+    F1 = 2 * ((TP / (TP + FP)) * (TP / (TP + FN))) /
+      ((TP / (TP + FP)) + (TP / (TP + FN)))
+  )
+}) |>
+  bind_rows()
+
+knitr::kable(
+  xgb_threshold_results,
+  format      = "simple",
+  align       = c("c", "r", "r", "r", "r", "r"),
+  caption     = "XGBoost Peformance by Threshold"
+)
+
+#
 # XGBoost Peformance by Threshold
 # Threshold	Accuracy	Recall	Precision	Specificity	F1
 # 0.10	0.2075050	0.9875558	0.2002847	0.0120713	0.3330285
@@ -1191,7 +1228,12 @@ knitr::kable(
 # 0.20	0.4821965	0.5402042	0.2027059	0.4676633	0.2947937
 # 0.25	0.6723135	0.2115507	0.1998192	0.7877528	0.2055177
 # 0.30	0.7642396	0.0520102	0.1852273	0.9426813	0.0812157
+```
 
+
+```{r}
+#| label: xgboost-model1-diagnostics-static-table
+#| warning: FALSE
 xgb_threshold_results <- tribble(
   ~Threshold, ~Accuracy, ~Recall, ~Precision, ~Specificity, ~F1,
   0.10, 0.2075050, 0.9875558, 0.2002847, 0.0120713, 0.3330285,
@@ -1222,21 +1264,25 @@ Finally, we trained an XGBoost model to explore if alternative classifiers could
 ## Comparison of Predicted Results
 
 ```{r}
-#| label: all-models-pred-test-data
+#| label: test-data-model1
+#| echo: false
+#| include: false
+#| eval: false
 # Lets see how it does on our test data.
-
-
-
 # # Test Data on random forest 1
-#  pred.test.rf.sim1 <- predict(
-#    rf.sim1,
-#    newdata = testing[drop_cols],
-#    type = "class"
-#  )
-#  table(testing[,41], pred.test.rf.sim1)
-# 
-# 
- conf_rf1_test <- matrix(
+  pred.test.rf.sim1 <- predict(
+   rf.sim1,
+   newdata = testing[drop_cols],
+   type = "class"
+ )
+ table(testing[,41], pred.test.rf.sim1)
+```
+
+
+```{r}
+#| label: test-data-model1-static-table
+
+conf_rf1_test <- matrix(
   c(8567, 3978,
     1269, 1782),
   nrow = 2,
@@ -1251,46 +1297,70 @@ knitr::kable(
   conf_rf1_test,
   caption = "Random Forest Model 1 Test Set Confusion Matrix"
 )
- 
- 
- 
- 
- 
- 
- 
- 
- # Test Data on random forest 2 
+```
+
+
+```{r}
+#| label: test-data-model2
+#| echo: false
+#| include: false
+#| eval: false
+# Test Data on random forest 2 (Paul's improved model)
   pred.test.rf.sim2 <- predict(
     rf.sim2,
     newdata = testing[drop_cols],
     type = "class"
   )
   table(testing[,41], pred.test.rf.sim2)
- 
- 
- 
+```
+
+```{r}
+#| label: test-data-model2-static-table
+# Static table of test Data on random forest 2 (Paul's improved model)
+conf_rf2_test <- matrix(
+  c(8618, 3927,
+    1292, 1759),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list(
+    Actual = c("0", "1"),
+    Predicted = c("0", "1")
+  )
+)
+
+knitr::kable(
+  conf_rf2_test,
+  caption = "Random Forest Model 2 Test Set Confusion Matrix"
+)
+```
 
 
 
- 
- 
- # # XGB Score on the test data 
- # test_prob <- predict(xgb_model, dtest)
- # 
- # test_class <- ifelse(test_prob > 0.30, 1, 0)
- # 
- # # 
- # conf_mat <- table(
- #   Actual = y_test,
- #   Predicted = test_class
- # )
- # 
- # # 
- # kable(as.data.frame.matrix(conf_mat),
- #       caption = "Confusion Matrix")
- 
- 
- 
+```{r}
+#| label: test-data-model1
+#| echo: false
+#| include: false
+#| eval: false
+# # XGB Score on the test data 
+ test_prob <- predict(xgb_model, dtest)
+
+ test_class <- ifelse(test_prob > 0.30, 1, 0)
+
+ #
+ conf_mat <- table(
+   Actual = y_test,
+   Predicted = test_class
+ )
+
+ #
+ kable(as.data.frame.matrix(conf_mat),
+       caption = "Confusion Matrix")
+```
+
+
+```{r}
+#| label: test-data-xgbmodel1-static-table
+# static table of test data on XGB
 conf_xgb_test <- matrix(
   c(11731, 814,
     2902, 149),
