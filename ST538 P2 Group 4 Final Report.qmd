@@ -25,6 +25,8 @@ score serves as the single strongest individual predictor and is encoded here
 as a 20-level ordered factor preserving the full risk ranking across bands.
 
 ```{r}
+#| include: FALSE
+#| echo: FALSE
 # Write a report based on the statistical analysis in this project. As described in the project outline page, write the report following those directions.
 # 
 # Submit a four-page (reasonable margins and font size) document that summarizes the elements listed below (preferably in separate sections).
@@ -44,9 +46,9 @@ as a 20-level ordered factor preserving the full risk ranking across bands.
 
 
 ```{r}
-#| include: false
-#| warning: false
-#| echo: false
+#| include: FALSE
+#| warning: FALSE
+#| echo: FALSE
 
 # load dependencies
 library(tidyverse)
@@ -67,9 +69,9 @@ library(pROC)
 
 
 ```{r}
-#| include: false
-#| warning: false
-#| echo: false
+#| include: FALSE
+#| warning: FALSE
+#| echo: FALSE
 
 # Project URL https://www.kaggle.com/datasets/avikpaul4u/vehicle-loan-default-prediction?select=train.csv
 
@@ -86,8 +88,8 @@ str(train_dat)
 ```
 
 ```{r}
-#| include: false
-#| echo: false
+#| include: FALSE
+#| echo: FALSE
 
 # Check for any columns with missing data
 sapply(train_dat, anyNA)
@@ -101,9 +103,9 @@ sapply(train_dat, anyNA)
 ## Feature extraction and description
 
 ```{r}
-#| include: false
-#| echo: false
-#| warning: false
+#| include: FALSE
+#| echo: FALSE
+#| warning: FALSE
 
 # helper function - parse tenure string to numeric months
 parse_tenure_months <- function(x) {
@@ -391,21 +393,21 @@ train_dat <- train_dat %>%
 
 Thirty-five percent of loans are high loan to value (LTV) of >80%, combined with a large portion of borrowers having thin credit history (%), it shows a meaningful concentration of risk. The vast majority (94%) of borrowers fall in the prime age band, 13,812 young borrowers (<22 years of age) are worth watching. Fifty-six percent of borrowers are "thin file" meaning they have <12 month of credit history. This makes sense, in India about half of first time car buyers are using lending for the first time. Since thin and normal are two different populations, we debated on splitting the dataset and creating a model for thin credit and one for normal. Ultimately we decided it would be better to focus our efforts on normal only as the model will likely suffer trying to work on both. 
 
-After initial examination of this dataset, we were again reminded of the high dimensionality of each observation. We wanted to be able to focus on important features. Given the size of the dataset will already impact the speed of analytical methods, we want to remove as many unncessary variables as possible. Additionally, there are several columns with missing values or continuous variables that would serve better on translating into categories. 
+After initial examination of this dataset, we were again reminded of the high dimensionality of each observation. We wanted to be able to focus on important features. Given the size of the dataset will already impact the speed of analytical methods, we want to remove as many unnecessary variables as possible. Additionally, there are several columns with missing values or continuous variables that would serve better on translating into categories. 
 
 As such, our feature engineering focused on  translating domain knowledge into model-ready
 variables: loan structure risk (LTV, implied down payment), borrower
 demographics (age at disbursement, employment type), identity verification
 depth (KYC document count), credit utilisation and delinquency history across
 primary and secondary accounts, EMI burden relative to existing obligations,
-and recent bureau activity including new account uptake and hard enquiries.
+and recent bureau activity including new account uptake and hard inquiries.
 
 ```{r}
-#| include: false
-#| echo: false
-#| warning: false
+#| include: FALSE
+#| echo: FALSE
+#| warning: FALSE
 
-# validation
+# validation section - set include to TRUE for EDA exploration
 cat("Rows:", nrow(train_dat), "\n")
 cat("Total columns after engineering:", ncol(train_dat), "\n")
 cat("Net new columns:", ncol(train_dat) - 41, "\n\n")
@@ -451,7 +453,7 @@ print(data.frame(
 
 
 ```{r}
-#| echo: false
+#| echo: FALSE
 # default rate by stress score table
 stress_table <- train_dat %>%
   group_by(stress_score) %>%
@@ -481,22 +483,12 @@ knitr::kable(
 )
 ```
 
-To consolidate variables, we constructed a composite stress score aggregating six binary risk flags to function as a diagnostic and interpretability aid. The six flags are added together to create the score (0 - 5), with the variables chosen as risk indicators. These six flags are:
-  - client has an overdue primary account
-  - client has an overdue secondary account
-  - client has had account delinquincy in the last 6 months
-  - client has loan-to-value level about 80%
-  - client has less than 12 months of credit history
-  - client has one of 7 risk assessments marked 
-Additionally, we mutated a  Boolean variable "high_stress_flag" that is marked as positive if the stress score is 3 or more.
+To consolidate the risk signals across categories, we constructed a composite stress score by summing six binary flags, each capturing a distinct dimension of borrower risk. The first two flags address active repayment failures: whether the borrower has at least one overdue primary account, and whether they carry overdue exposure on a secondary account where they appear as co-applicant or guarantor, a contingent liability that standard underwriting often underweights. The third flag captures recent behavioral signal, marking any borrower who experienced an account delinquency in the six months prior to disbursement. The remaining three flags address structural vulnerability in the borrower's financial position: whether loan-to-value exceeds 80%, leaving minimal equity cushion in the asset, whether the borrower has fewer than 12 months of credit history, and whether their bureau description falls into one of seven unscoreable categories, meaning no reliable credit score can be assigned at all.
 
-Initial cross-tabulation confirms
-that the stress score tracks default rate monotonically, rising from 15% at
-score 0 to 49% at score 5, providing early evidence that the engineered
-features carry meaningful signal.
+The additive structure is intentional. Rather than weighting any single factor, the score reflects simultaneous stress across multiple dimensions. A borrower with a high LTV alone is a manageable risk, a borrower who is also recently delinquent, has no credit history, and carries no bureau score represents a fundamentally different profile. The score ranges from 0 to 6, and we additionally derived high_stress_flag as a binary indicator for scores of 3 or more. Initial cross-tabulation confirms that the stress score tracks default rate monotonically, rising from 15% at score 0 to 49% at score 5, nearly a 3x lift, providing early evidence that the engineered features carry meaningful signal.
 
 ```{r}
-#| echo: false
+#| echo: FALSE
 # default rate by stress score graphically
 stress_summary <- train_dat %>%
   group_by(stress_score) %>%
@@ -539,16 +531,13 @@ ggplot(stress_summary, aes(x = factor(stress_score))) +
 ```
 
 
-Through this figure, we can see that stress score is working well as a risk signal. The refault rate raises from 15% at score 0 to ~49% at score 5 (3x). Most of the population sits at 2 (21% default), probably thin-file + high-LTV, but no active delinquency.The jump from 2 to 3 is steep (21-29%), pri_any_overdue_flag and/or recent_delinquency_flag are likely doing a lot of work. Scores 4 and 5 are small segments with high default rates (42-49%), it's really up to us if we want to keep them, probably should. Score 0 is not zero (15.1%), even the cleanest borrowers carry default risk. We can use this stress_score as a standalone feature, but it's worth noting that components might actually capture more non-linear interactions than the score itself.
-
-
-
-
+The figure confirms that the stress score functions as an effective risk signal. Default rate rises monotonically from 15% at score 0 to 49% at score 5, a threefold increase across the range. The majority of borrowers fall at score 2, where the default rate of 21.5% closely tracks the overall population rate, reflecting the modal profile of a borrower who is thin-file and high-LTV but has no active delinquency. The steepest step in the gradient occurs between scores 2 and 3, where the default rate jumps nearly 8 percentage points, suggesting that the primary overdue and recent delinquency flags carry disproportionate weight once a borrower already carries structural risk. Scores 4 and 5 represent a small combined segment of under 900 borrowers but carry default rates of 42% and 49% respectively, and are retained in the feature set given their strong signal. Notably, even score 0 borrowers default at a rate of 15%, a reminder that first-EMI default in this market reflects payment intent as much as financial capacity. While the stress score is included as a standalone feature, the individual component flags are also retained, as tree-based models may capture non-linear interactions among them that the additive score cannot express.
 
 ```{r}
-#| echo: false
-#| include: false
-# engineered feature index table
+#| echo: FALSE
+#| include: TRUE
+
+# engineered feature index table - this can be pulled from if needed for context
 feature_index <- tribble(
   ~Category,          ~Feature,
   "Loan terms",       "ltv_high_flag",
@@ -597,8 +586,8 @@ knitr::kable(feature_index_wide, format = "simple", col.names = c("Category", "F
 
 
 ```{r}
-#| echo: false
-#| include: false
+#| echo: FALSE
+#| include: FALSE
 train_dat_normal <- train_dat %>%
   filter(thin_file_flag == 0)
 
@@ -611,16 +600,18 @@ cbind(count(train_dat_normal),count(train_dat_thin))
 
 ## Predictive Model Fitting
 
-After feature extraction and variable selection, we split the dataset into training, validation, and testing subsets using a 70/15/15 split, resulting in approximately 72,000 observations in the training set and 15,000 observations each in the validation and testing sets.
+After feature extraction and variable selection, the dataset was split into training, validation, and testing subsets using a 70/15/15 ratio. Given the decision to model scored borrowers separately, the split was applied to the 103,369 non-thin-file records, resulting in approximately 72,000 observations in the training set and roughly 15,000 each in the validation and testing sets. Two classification methods were evaluated: Random Forest and XGBoost.
 
-We will utilize two methods to try classifying defaults accurately:
-Random Forest & XGBoost
+Prior to model fitting, columns were removed from the feature set for one of three reasons: missingness, redundancy, or lack of predictive relevance.
+Three columns contained missing values incompatible with random forest. EMPLOYMENT_TYPE carried 7,661 NAs from blank strings in the raw data, thin_file_reason carried 103,369 NAs by design as it is only populated for thin-file borrowers, and new_loan_emi_ratio carried 159,517 NAs arising when PRIMARY_INSTAL_AMT is zero. Rather than impute these, they were excluded given that the information each carries is represented elsewhere in the feature set.
 
-Explanation of removal of variables with missingness:
+Administrative identifiers with no predictive signal were also removed, including UNIQUEID, BRANCH_ID, EMPLOYEE_CODE_ID, and MANUFACTURER_ID. DISBURSAL_DATE and STATE_ID were excluded as their relevant information had already been extracted into engineered features during feature construction.
+
+Finally, the four weakest KYC flags were dropped in favor of the summary measures kyc_doc_count and strong_kyc_flag, and the secondary account financial detail columns were removed as redundant given the derived exposure flags already in the feature set. LOAN_DEFAULT was excluded as the response variable.
 
 ```{r}
-#| echo: false
-#| include: false
+#| echo: FALSE
+#| include: FALSE
 
 set.seed(2026)
 
@@ -674,8 +665,8 @@ rbind(count(training), count(validation), count(testing))
 
 
 ```{r}
-#| echo: false
-#| include: false
+#| echo: FALSE
+#| include: FALSE
 
 
 # Check number of NA's per column
@@ -721,8 +712,8 @@ x_testing <- testing[, drop_cols]
 
 
 ```{r}
- #| echo: false
- #| include: false
+ #| echo: FALSE
+ #| include: FALSE
     rf.sim1 = randomForest(training[drop_cols], 
                            factor(training$LOAN_DEFAULT))
 
@@ -730,12 +721,12 @@ x_testing <- testing[, drop_cols]
 
 
 ```{r}
- #| echo: false
- #| include: false
+ #| echo: FALSE
+ #| include: FALSE
     pred.rf.sim1 = rf.sim1$predicted
     table(training[,41], pred.rf.sim1)
     
-    varImpPlot(rf.sim1)
+   # varImpPlot(rf.sim1)
    # 
  
    # #training |> filter(high_stress_flag == 1)
@@ -744,11 +735,100 @@ x_testing <- testing[, drop_cols]
    # #       0     1
    # # 0 57124   395
    # # 1 14256   355
+  
+# variable importance plot generated from rf.sim1  
+# gave this up in favor of the next chunk
+#importance(rf.sim1) |>
+#  as.data.frame() |>
+#  rownames_to_column("Feature") |>
+#  arrange(MeanDecreaseGini) |>
+#  mutate(Feature = factor(Feature, levels = Feature)) |>
+#  ggplot(aes(x = MeanDecreaseGini, y = Feature)) +
+#  geom_col() +
+#  theme_classic() +
+#  labs(title = "RF1 Variable Importance", x = "Mean Decrease Gini", y = NULL)
+```
+```{r}
+#| fig.height: 8
+#| fig.width: 6
+# Theoretically meaningful variables — highlighted regardless of Gini rank
+highlight_vars <- c(
+  "PERFORM_CNS_SCORE",
+  "PERFORM_CNS_SCORE_DESCRIPTION",
+  "stress_score",
+  "recent_delinquency_flag",
+  "pri_any_overdue_flag",
+  "DELINQUENT_ACCTS_IN_LAST_SIX_MONTHS",
+  "credit_history_months",
+  "avg_acct_age_months",
+  "ltv_high_flag",
+  "pri_leverage_ratio"
+)
+ 
+# Pull importance scores from model object
+imp_df <- importance(rf.sim1) |>
+  as.data.frame() |>
+  rownames_to_column("Feature") |>
+  arrange(MeanDecreaseGini) |>
+  mutate(
+    Feature    = factor(Feature, levels = Feature),
+    Highlighted = ifelse(Feature %in% highlight_vars, "Key predictors", "Other")
+  )
+ 
+ggplot(imp_df, aes(x = MeanDecreaseGini, y = Feature, fill = Highlighted)) +
+  geom_col() +
+  scale_fill_manual(
+    values = c("Key predictors" = "steelblue", "Other" = "grey75"),
+    name   = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    axis.text.y      = element_text(size = 8),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    legend.position  = "top",
+    plot.title       = element_text(size = 12)
+  ) +
+  labs(
+    title = "RF1 Variable Importance",
+    x     = "Mean Decrease Gini",
+    y     = NULL
+  )
+```
+
+---------------------------------------------
+Some context for why the predictor is failing (Paul)
+---------------------------------------------
+The variable importance results appear distorted by random forest's Gini importance metric, which favors high-cardinality variables (CURRENT_PINCODE_ID, DATE_OF_BIRTH, DISBURSED_AMOUNT) because they offer more split opportunities, not necessarily because they better predict defaults. Meanwhile, credit-risk variables that should be more informative (PERFORM_CNS_SCORE, delinquency measures, leverage ratio, everything in blue) rank in the middle, likely due to class imbalance rather than a lack of predictive value. Before moving forward, we switch the importance metric, instead of decrease gini, we use Mean decrease accuracy and ran again.
+
+--------------------------
+Idea for next steps (Paul):
+--------------------------
+
+Rerun the RF1 with  sampsize   = c(5000, 5000), importance = TRUE, something like the following chunk:
+```{r}
+rf.sim1 = randomForest(
+  training[drop_cols],
+  factor(training$LOAN_DEFAULT),
+  sampsize   = c(5000, 5000),
+  importance = TRUE
+)
 ```
 
 ```{r}
- #| echo: false
- #| include: false
+# graph the output on accuracy score
+varImpPlot(rf.sim1, type = 1)
+```
+
+
+```{r}
+varImpPlot(rf.sim1, type = 1)
+```
+
+
+```{r}
+ #| echo: FALSE
+ #| include: TRUE
   pred.val.rf.sim1 <- predict(
     rf.sim1,
     newdata = x_validation,
@@ -765,8 +845,8 @@ x_testing <- testing[, drop_cols]
 
 
 ```{r}
-# #| echo: false
-# #| include: false
+# #| echo: FALSE
+# #| include: FALSE
 #  rf.sim2 <- randomForest(
 #    x = training[drop_cols],
 #    
@@ -779,8 +859,8 @@ x_testing <- testing[, drop_cols]
 
 
 ```{r}
-# #| echo: false
-# #| include: false
+# #| echo: FALSE
+# #| include: FALSE
 # # 
 #  pred.rf.sim2 <- rf.sim2$predicted
 #  table(training[,41], pred.rf.sim2)
@@ -808,8 +888,8 @@ x_testing <- testing[, drop_cols]
 
 
 ```{r}
-#| echo: false
-#| include: false
+#| echo: FALSE
+#| include: FALSE
 
 # https://www.statology.org/random-forest-in-r/
 # Trying to optimize with RFTune
@@ -827,8 +907,8 @@ x_testing <- testing[, drop_cols]
 
 
 ```{r}
-#| echo: false
-#| include: false
+#| echo: FALSE
+#| include: FALSE
 
 # Commented out to allow the doc to render faster
 # best.mtry <- tune.rf[which.min(tune.rf[,2]),1]
@@ -851,8 +931,8 @@ x_testing <- testing[, drop_cols]
 
 
 ```{r}
-#| echo: false
-#| include: false
+#| echo: FALSE
+#| include: FALSE
 
 # # Commented out to allow the doc to render faster
 #   pred.rf.final = rf.final$predicted
@@ -878,8 +958,8 @@ x_testing <- testing[, drop_cols]
 ```
 
 ```{r}
-#| echo: false
-#| warning: false
+#| echo: FALSE
+#| warning: FALSE
 
 # Pulling everything from the commented out models above.
 rf_results <- tribble(
@@ -922,25 +1002,25 @@ kable(
 
 
 
-First, we tried fitting a default random forest classifier to the training data and evaluating its performance on both the training and validation datasets. Due to the strong class imbalance in the loan default variable, the initial models showed poor sensitivity for detecting loan defaults, despite relatively high overall accuracy. We then adjusted model parameters and explored additional tuning strategies, including the use of tuneRF() to optimize the mtry parameter and balanced sampling to improve classification performance. The tuned model substantially improved recall for default predictions, though it also increased the number of false positive classifications. While the final random forest model showed meaningful improvement over the baseline models (Table 2), prediction performance for loan defaults remained moderate, indicating that additional tuning or alternative classification methods may be necessary for highly imbalanced loan data. 
+First, we tried fitting a default random forest classifier to the training data and evaluating its performance on both the training and validation datasets. Due to the strong class imbalance in the loan default variable, the initial models showed poor sensitivity for detecting loan defaults, despite relatively high overall accuracy. We then adjusted model parameters and explored additional tuning strategies, including the use of tuneRF() to optimize the mtry parameter and balanced sampling to improve classification performance. The tuned model substantially improved recall for default predictions, though it also increased the number of FALSE positive classifications. While the final random forest model showed meaningful improvement over the baseline models (Table 2), prediction performance for loan defaults remained moderate, indicating that additional tuning or alternative classification methods may be necessary for highly imbalanced loan data. 
 
 
 
 
 
 ```{r}
-#| include: false
-#| warning: false
-#| echo: false
+#| include: FALSE
+#| warning: FALSE
+#| echo: FALSE
 # Let's try going back to LASSO, see which features we get
 ```
 
 
 
 ```{r}
-#| include: false
-#| warning: false
-#| echo: false
+#| include: FALSE
+#| warning: FALSE
+#| echo: FALSE
 
 # XG Boost
 
@@ -1012,8 +1092,8 @@ xgb_model <- xgb.train(
 ```
 
 ```{r}
-#| warning: false
-#| echo: false
+#| warning: FALSE
+#| echo: FALSE
 # Get predictions
 pred_prob <- predict(xgb_model, dvalid)
 
@@ -1029,9 +1109,9 @@ kable(as.data.frame.matrix(conf_mat),
 ```
 
 ```{r}
-#| warning: false
-#| echo: false
-#| include: false
+#| warning: FALSE
+#| echo: FALSE
+#| include: FALSE
 roc_obj <- roc(y_valid, pred_prob)
 
 auc(roc_obj)
@@ -1040,8 +1120,8 @@ auc(roc_obj)
 
 
 ```{r}
-#| warning: false
-#| echo: false
+#| warning: FALSE
+#| echo: FALSE
 
 thresholds <- c(0.10, 0.15, 0.20, 0.25, 0.30)
 
@@ -1164,6 +1244,6 @@ all_chunks <- setdiff(knitr::all_labels(), c("appendix-collect", "appendix"))
 
 ```{r appendix, ref.label=all_chunks}
 #| echo: true
-#| eval: false
+#| eval: FALSE
 
 ```
