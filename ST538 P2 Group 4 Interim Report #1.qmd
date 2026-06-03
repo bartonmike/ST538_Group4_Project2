@@ -1,10 +1,9 @@
 ---
 title: "ST 538 Group 4 Project 2"
+author: Paul Anderson, Michael Barton, Kevin Kincaid
 format: pdf
 ---
-
-## Introduction
-
+## Introduction to Dataset
 Vehicle loan default prediction presents a distinct set of challenges relative
 to other retail credit products. Unlike mortgage or personal loan portfolios,
 two-wheeler financing in emerging markets such as India serves a large
@@ -14,7 +13,6 @@ uses the CRIF High Mark vehicle loan dataset to develop a feature set capable
 of identifying first-EMI default risk across both scored and thin-file borrower
 segments.
 
-## Data and Processing
 
 The dataset comprises 233,154 disbursed loans with a binary default indicator
 capturing payment failure on the first EMI due date. A notable characteristic
@@ -38,76 +36,53 @@ score 0 to 49% at score 5, providing early evidence that the engineered
 features carry meaningful signal.
 
 ```{r}
+#| include: false
+#| warning: false
+#| echo: false
+
 # load dependencies
 library(tidyverse)
 library(lubridate)
 library(stringr)
 library(knitr)
+library(randomForest)
 ```
 
 
 ```{r}
 #| include: false
+#| warning: false
+#| echo: false
 # Project URL https://www.kaggle.com/datasets/avikpaul4u/vehicle-loan-default-prediction?select=train.csv
-
-set.seed(2026)
 
 # Load our files (saved manually to data directory)
 # Training data
 train_dat = read.csv('./data/train.csv')
 
 # Testing data (DO NOT LOAD UNTIL WEEK 8 OR 9!!)
+# Also, the test.csv does not have Loan_Default, so it may not work for this
 #test_dat = read.csv('./data/test.csv')
 
 head(train_dat)
 str(train_dat)
-
-# splitting 70/30 train/test
-sample <- sample(c(TRUE, FALSE), nrow(train_dat), replace=TRUE, prob=c(0.7,0.3))
-train  <- train_dat[sample, ]
-test   <- train_dat[!sample, ]
-
-head(train)
 ```
 
 ```{r}
 #| include: false
+#| echo: false
 # Check for any columns with missing data
 sapply(train_dat, anyNA)
+
+# There are no missingness in the data! Pretty sweet!
 ```
 
 
-There are no missingness in the data! Pretty sweet!
-
+## Feature extraction and description
 ```{r}
 #| include: false
-# Did they default?
-train_dat |>
-  summarise(
-    defaulted_yes_overall = sum(LOAN_DEFAULT == 1),
-    defaulted_no_overall = sum(LOAN_DEFAULT == 0)
-    
-  )
+#| echo: false
+#| warning: false
 
-train |>
-  summarise(
-    defaulted_yes_train = sum(LOAN_DEFAULT == 1),
-    defaulted_no_train = sum(LOAN_DEFAULT == 0)
-    
-  )
-
-test |>
-  summarise(
-    defaulted_yes_test = sum(LOAN_DEFAULT == 1),
-    defaulted_no_test = sum(LOAN_DEFAULT == 0)
-    
-  )
-```
-
-
-Feature engineering
-```{r}
-#| include: false
 # helper function - parse tenure string to numeric months
 parse_tenure_months <- function(x) {
   years  <- as.numeric(str_extract(x, "\\d+(?=yrs)"))
@@ -355,7 +330,11 @@ train_dat <- train_dat %>%
     mutate(EMPLOYMENT_TYPE = na_if(EMPLOYMENT_TYPE, ""))
 ```
 
+
 ```{r}
+#| include: false
+#| echo: false
+#| warning: false
 # validation
 cat("Rows:", nrow(train_dat), "\n")
 cat("Total columns after engineering:", ncol(train_dat), "\n")
@@ -400,7 +379,9 @@ print(data.frame(
 ))
 ```
 
+
 ```{r}
+#| echo: false
 # default rate by stress score table
 stress_table <- train_dat %>%
   group_by(stress_score) %>%
@@ -429,7 +410,10 @@ knitr::kable(
   format.args = list(big.mark = ",")
 )
 ```
+
+
 ```{r}
+#| echo: false
 # default rate by stress score graphically
 stress_summary <- train_dat %>%
   group_by(stress_score) %>%
@@ -470,13 +454,16 @@ ggplot(stress_summary, aes(x = factor(stress_score))) +
     x     = "Stress score"
   )
 ```
-
-Summary of EDA and feature engineering:
 Thirty-five percent of loans are high loan to value (LTV) of >80%, combined with a large portion of borrowers having thin credit history (%), it shows a meaningful concentration of risk. The vast majority (94%) of borrowers fall in the prime age band, 13,812 young borrowers (<22 years of age) are worth watching. Fifty-six percent of borrowers are "thin file" meaning they have <12 month of credit history. This makes sense, in India about half of first time car buyers are using lending for the first time. Thin and normal are two different populations, we may want to split the dataset and create a model for thin credit and one for normal, or focus our efforts on normal only--the model will likely suffer trying to work on both. 
 
 Stress score is working well as a risk signal. Default raises from 15% at score 0 to ~49% at score 5 (3x). Most of the population sits at 2 (21% default), probably thin-file + high-LTV, but no active delinquncy.The jump from 2 to 3 is steep (21-29%), pri_any_overdue_flag and/or recent_delinquncy_flag are likely doing a lot of work. Scores 4 and 5 are small segments with high default rates (42-49%), it's really up to us if we want to keep them, probably should. Score 0 is not zero (15.1%), even the cleanest borrowers carry default risk. We can use this stress_score as a standalone feature, but it's worth noting that components might actually capture more non-linear interactions than the score itself.
 
+
+
+
 ```{r}
+#| echo: false
+#| include: false
 # engineered feature index table
 feature_index <- tribble(
   ~Category,          ~Feature,
@@ -524,3 +511,342 @@ knitr::kable(feature_index_wide, format = "simple", col.names = c("Category", "F
 
 
 
+
+```{r}
+#| echo: false
+#| include: false
+train_dat_normal <- train_dat %>%
+  filter(thin_file_flag == 0)
+
+train_dat_thin <- train_dat %>%
+  filter(thin_file_flag == 1)
+
+cbind(count(train_dat_normal),count(train_dat_thin))
+```
+
+
+## Building Classifiers and Results
+
+
+
+```{r}
+#| echo: false
+#| include: false
+
+set.seed(2026)
+
+# Set our splits
+train_percent <- 0.7
+not_train_percent <- 0.3
+
+# not_train split up 
+validate_percent <- 0.5 # Ends up being 0.15
+test_percent <- 0.5 # Ends up being 0.15
+
+
+# splitting into train/not_train -   this had an error with nrow(train_dat) producing too long of a sample
+sample <- sample(c(TRUE, FALSE), nrow(train_dat_normal), replace=TRUE, prob=c(train_percent,not_train_percent))
+training  <- train_dat_normal[sample, ]
+
+
+
+not_training   <- train_dat_normal[!sample, ]
+
+# splitting into validation/test
+train_sample <- sample(c(TRUE, FALSE), nrow(not_training), replace=TRUE, prob=c(validate_percent,test_percent))
+validation  <- not_training[train_sample, ]
+testing   <- not_training[!train_sample, ]
+
+
+rbind(count(training), count(validation), count(testing))
+
+# # Did they default?
+# train_dat |>
+#   summarise(
+#     defaulted_yes_overall = sum(LOAN_DEFAULT == 1),
+#     defaulted_no_overall = sum(LOAN_DEFAULT == 0)
+#     
+#   )
+# 
+# train |>
+#   summarise(
+#     defaulted_yes_train = sum(LOAN_DEFAULT == 1),
+#     defaulted_no_train = sum(LOAN_DEFAULT == 0)
+#   )
+# 
+# test |>
+#   summarise(
+#     defaulted_yes_test = sum(LOAN_DEFAULT == 1),
+#     defaulted_no_test = sum(LOAN_DEFAULT == 0)
+#     
+#   )
+```
+
+
+```{r}
+#| echo: false
+#| include: false
+  #sapply(testing[,c(-10, -56, -66, -41)], anyNA)
+  
+```
+
+```{r}
+#| echo: false
+#| include: false
+  head(training[,c(-1, -5, -7, -10, -11, -12, -13, -14, -17, -18, -19, -26, -27, -29, -31, -32, -33, -35, -56, -66, -41)])
+
+ #which(names(training) %in% c("new_loan_emi_ratio","STATE_ID"))
+  # the following have NA values which do not work with forest
+  #10 EMPLOYMENT_TYPE
+  #56 thin_file_reason
+  #66 new_loan_emi_ratio
+  
+  #41 is predictor LOAN_DEFAULT
+  sapply(training,anyNA)
+  #sapply(training[,c(-10, -56, -66, -42)], anyNA)
+  
+  #training |> filter(is.na(thin_file_reason))
+  #training |> filter(is.na(high_stress_flag))
+  
+drop_cols <- c(-1, -5, -7, -10, -11, -12, -13,
+               -14, -17, -18, -19, -26, -27,
+               -29, -31, -32, -33, -35,
+               -56, -66, -41)
+
+# Save the filtered data into variables to make it easier
+x_training <- training[, drop_cols]
+x_validation <- validation[, drop_cols]
+```
+
+
+```{r}
+#| echo: false
+#| include: false
+  # rf.sim1 = randomForest(training[,c(-1, -5, -7, -10, -11, -12, -13, -14, -17, -18, -19, -26, -27, -29, -31, -32, -33, -35, -56, -66, -41)], 
+  #                        factor(training$LOAN_DEFAULT))
+
+```
+
+
+```{r}
+#| echo: false
+#| include: false
+  # pred.rf.sim1 = rf.sim1$predicted
+  # table(training[,41], pred.rf.sim1)
+  # 
+  # varImpPlot(rf.sim1)
+  # 
+
+  # #training |> filter(high_stress_flag == 1)
+  # 
+  # #    pred.rf.sim1
+  # #       0     1
+  # # 0 57124   395
+  # # 1 14256   355
+```
+
+```{r}
+#| echo: false
+#| include: false
+# pred.rf.sim1 <- predict(
+#   rf.sim1,
+#   newdata = x_validation,
+#   type = "class"
+# )
+# 
+# table(validation[,41], pred.rf.sim1)
+# 
+#   #  pred.rf.sim1
+#   #       0     1
+#   # 0 12415    94
+#   # 1  3056    78
+```
+
+
+```{r}
+#| echo: false
+#| include: false
+# rf.sim2 <- randomForest(
+#   x = training[, c(-1, -5, -7, -10, -11, -12, -13,
+#                    -14, -17, -18, -19, -26, -27,
+#                    -29, -31, -32, -33, -35,
+#                    -56, -66, -41)],
+#   
+#   y = factor(training$LOAN_DEFAULT),
+# 
+#   ntree = 500,
+#   importance = TRUE
+# )
+```
+
+
+```{r}
+#| echo: false
+#| include: false
+# 
+# pred.rf.sim2 <- rf.sim2$predicted
+# table(training[,41], pred.rf.sim2)
+# # pred.rf.sim2
+# #         0     1
+# #   0 57132   387
+# #   1 14246   365
+# 
+# pred.rf.sim2 <- predict(
+#   rf.sim2,
+#   newdata = x_validation,
+#   type = "class"
+# )
+# 
+# 
+# table(validation[,41], pred.rf.sim2)
+# 
+# 
+#   #  pred.rf.sim2
+#   #       0     1
+#   # 0 12407   102
+#   # 1  3058    76
+```
+
+
+```{r}
+#| echo: false
+#| include: false
+# CURRENTLY TOO LARGE!!!
+# Random Forest Classifier for Digit Recognition Data
+  #rf.digit = randomForest(training[,c(-10, -56, -66, -41)], factor(training$LOAN_DEFAULT),  xtest = testing[,c(-10, -56, -66, -41)], factor(testing$LOAN_DEFAULT),  importance = T, proximity = T)
+  # Predicted response labels
+  #rfPred.digit = (rf.digit$test)$predicted
+  # Misclassification errors in the test data
+ # table(digit_no.test, rfPred.digit)  
+  # Variable Importance Plot
+  #varImpPlot(rf.digit)  
+  
+
+```
+
+
+
+
+```{r}
+#| echo: false
+#| include: false
+
+# https://www.statology.org/random-forest-in-r/
+# Commented out to allow the doc to render faster
+# tune.rf <- tuneRF(
+#   x = training[, drop_cols],
+#   
+#   y = factor(training$LOAN_DEFAULT),
+# 
+#   stepFactor = 1.5,
+#   improve = 0.01,
+#   ntreeTry = 300
+# )
+```
+
+
+```{r}
+#| echo: false
+#| include: false
+
+# Commented out to allow the doc to render faster
+# best.mtry <- tune.rf[which.min(tune.rf[,2]),1]
+# 
+# rf.final <- randomForest(
+#   x = training[, drop_cols],
+#   y = factor(training$LOAN_DEFAULT),
+# 
+#   ntree = 1000,
+#   mtry = best.mtry,
+# 
+#   importance = TRUE,
+# 
+#   sampsize = c(10000, 10000)
+# )
+```
+
+```{r}
+#| echo: false
+#| include: false
+
+# # Commented out to allow the doc to render faster
+#   pred.rf.final = rf.final$predicted
+#   table(training[,41], pred.rf.final)
+#   # pred.rf.final
+#   #       0     1
+#   # 0 43542 13977
+#   # 1  7518  7093  
+  
+#   pred.rf.final <- predict(
+#   rf.final,
+#   newdata = x_validation,
+#   type = "class"
+# )
+# 
+# 
+# table(validation[,41], pred.rf.final)
+# 
+#   # pred.rf.final
+#   #      0    1
+#   # 0 9345 3164
+#   # 1 1646 1488
+```
+```{r}
+#| echo: false
+#| warning: false
+
+# Pulling everything from the commented out models above.
+rf_results <- tribble(
+  ~Model, ~Dataset, ~TN, ~FP, ~FN, ~TP,
+
+  "rf.sim1", "Training",   57124, 395, 14256, 355,
+  "rf.sim1", "Validation", 12415, 94, 3056, 78,
+
+  "rf.sim2", "Training",   57132, 387, 14246, 365,
+  "rf.sim2", "Validation", 12407, 102, 3058, 76,
+
+  "rf.final", "Training",  43542, 13977, 7518, 7093,
+  "rf.final", "Validation", 9345, 3164, 1646, 1488
+) %>%
+  mutate(
+    Accuracy = (TP + TN) / (TP + TN + FP + FN),
+
+    Recall = TP / (TP + FN),
+
+    Precision = TP / (TP + FP),
+
+    Specificity = TN / (TN + FP),
+
+    F1 = 2 * (Precision * Recall) / (Precision + Recall)
+  )
+
+kable(
+  rf_results %>%
+    mutate(
+      across(
+        c(Accuracy, Recall, Precision, Specificity, F1),
+        round,
+        3
+      )
+    ),
+  caption = "Random Forest Model Comparison"
+)
+```
+
+
+
+
+After feature extraction and variable selection, we split the dataset into training, validation, and testing subsets using a 70/15/15 split, resulting in approximately 72,000 observations in the training set and 15,000 observations each in the validation and testing sets. We began by fitting a default random forest classifier to the training data and evaluating its performance on both the training and validation datasets. Due to the strong class imbalance in the loan default variable, the initial models showed poor sensitivity for detecting loan defaults, despite relatively high overall accuracy. We then adjusted model parameters and explored additional tuning strategies, including the use of tuneRF() to optimize the mtry parameter and balanced sampling to improve classification performance. The tuned model substantially improved recall for default predictions, though it also increased the number of false positive classifications. While the final random forest model showed meaningful improvement over the baseline models (Table 2), prediction performance for loan defaults remained moderate, indicating that additional tuning or alternative classification methods may be necessary for highly imbalanced loan data. In future work, we plan to continue tuning the random forest model and compare its performance against at least two additional classification approaches.
+
+
+## Appendix
+
+```{r appendix-collect, include=FALSE}
+all_chunks <- setdiff(knitr::all_labels(), c("appendix-collect", "appendix"))
+```
+
+```{r appendix, ref.label=all_chunks}
+#| echo: true
+#| eval: false
+
+```
