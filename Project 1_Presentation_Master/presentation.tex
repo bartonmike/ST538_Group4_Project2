@@ -26,17 +26,14 @@
 % This command set the default Color, is also possible to choose a custom color
 \setPrimaryColor{UFGBlue} 
 
-% First one is logo in title slide (we recommend use a horizontal image), and second one is the logo used in the remaining slides (we recommend use a square image)
-%\setLogos{lib/logos/infufgw.png}{lib/logos/infufgw.png} 
-
 
 % -------------------------------------- Title Slide Information
 
 
 \begin{document}
 %\title[Inf UFG]{Apresentações Instituto de informática}
-\title{Income, Insurance, and Inequality in Oregon:}
-\subtitle{Insights from the 2020–2024 ACS 5-Year PUMS}
+\title{Predicting Vehicle Loan Default}
+\subtitle{Classification using the CRIF High Mark vehicle loan dataset}
 
 \author{Paul Anderson\inst{1}\\Mike Barton\inst{1}\\Kevin Kincaid\inst{1}}
 
@@ -52,30 +49,8 @@
 \frame[noframenumbering]{\titlepage}
 
 
-%------------------------------------------------Slide 1
-%Slide 1: 
-%Title: Income, Insurance, and Inequality in Oregon: Insights from the 2020–2024 ACS 5-Year PUMS
-%Authors: Paul Anderson, Michael Barton, Kevin Kincaid
-%Image: Minimal Image so the title reads clearly
-%Footer: course/date
-
-
-
 
 %---------------------------------------------------------Slide 2
-%Slide 2:
-%Title: Data and Approach
-%Layout three columns
-%Data – ACS PUMS 2020-2024, n = 198,000 Oregon Residents
-%Method – OSEMN
-%Tools – Python for API pull, R for EDA and cleaning, survey weights, and inflation-adjusted income
-%Questions
-%Q1 Income predictors
-%Q2 Insurance coverage gap
-%Q3 Income vs. transportation
-
-
-%\section{Changing colors and Layouts}
 
 \setLayout{horizontal} % Example of changing layout
 %\setBGColor{Orange}  %Example of changing background color 
@@ -85,7 +60,7 @@
         \column{0.33\textwidth}
         \textbf{Data}
         \begin{itemize}
-        \item ACS PUMS 2020-2024
+        \item CRIF High Mark vehicle loan dataset
         \item n = 198,000
         \item Oregon Residents
         \end{itemize}
@@ -126,16 +101,6 @@
 
 
 %---------------------------------------------------------Slide 3
-%Slide 3:
-%Title: Q1: What predicts income?
-%4 charts:
-%Income histogram (right-skewed)
-%Log-income histogram (normalized)
-%Income vs. age (inverted-U shape)
-%Income by gender boxplot
-%Callout: Median income: Men ~ $47K | Women ~ $30K
-
-
 
 %\section{Changing colors and Layouts}
 \graphicspath{ {../figures/} }
@@ -170,18 +135,6 @@
 
 
 %---------------------------------------------------------Slide 4
-%Slide 4
-%Title: Q1: Modeling income
-%Left: Model equation
-%Income = Age + Age² + Education + Gender + Race + Birthplace + Household Size
-%Right: Key results
-%Education: +$2,700 per year
-%Female: −$10,000
-%Self-employed: +$3,800
-%Bottom: R^2 ~ 0.12
-
-
-
 
 %\section{Changing colors and Layouts}
 \setLayout{horizontal} % Example of changing layout
@@ -234,7 +187,6 @@
 
 
 
-
 %---------------------------------------------------------Slide 6
 %Slide 6
 %Title: Q2: The gap persists after controls
@@ -254,7 +206,6 @@ Reduced Model: UNINSURED \sim CIT + POVPIP
     
 \end{frame}
 %---------------------------------------------------------
-
 
 
 
@@ -285,6 +236,7 @@ Reduced Model: UNINSURED \sim CIT + POVPIP
 %---------------------------------------------------------
 
 
+
 %---------------------------------------------------------Slide 8
 \setLayout{vertical}
 \begin{frame}{Q3: Modeling}
@@ -302,17 +254,7 @@ Reduced Model: UNINSURED \sim CIT + POVPIP
 
 
 
-
 %---------------------------------------------------------Slide 9
-%Slide 8
-%Title: What we learned
-%Three takeaways:
-%Income: Education, age, gender, and labor supply are key predictors
-%Insurance: Large, persistent coverage gap for non-citizens
-%Transportation: Useful but limited predictor of income
-%Bottom:
-%Policy implication: Expanding coverage eligibility could reduce disparities
-%Data source: U.S. Census Bureau, ACS 2020–2024
 
 %\section{Changing colors and Layouts}
 \setLayout{horizontal} % Example of changing layout
@@ -338,11 +280,7 @@ Reduced Model: UNINSURED \sim CIT + POVPIP
 
 
 
-
 %---------------------------------------------------------Slide 10
-%Slide 9
-%Title: Future Directions
-%Expanding our income model’s efficacy by testing on other years and states
 
 %\section{Changing colors and Layouts}
 \setLayout{horizontal} % Example of changing layout
@@ -365,8 +303,6 @@ Expanding our various models' efficacy by testing on other years, states, census
 
 
 
-
-
 %---------------------------------------------------------Slide 11
 %Slide 10
 %Thanks: Image of an Oregon City
@@ -374,13 +310,12 @@ Expanding our various models' efficacy by testing on other years, states, census
 %\section{Changing colors and Layouts}
 \setLayout{blank} % Example of changing layout
 %\setBGColor{Orange}  %Example of changing background color 
-\begin{frame}{Thanks!}
+\begin{frame}{Thanks}
 
-\includegraphics[scale=0.5]{willamette}
+\includegraphics[scale=0.5]{sunset}
 
 \end{frame}
 %---------------------------------------------------------
-
 
 
 \end{document}

@@ -6,9 +6,23 @@ format: pdf
 
 
 # Dataset Background
-Our project is focused on predicting whether a customer for a Vehicle Loan will default based on their financial state at time of borrowing. Default Vehicle loan will default prediction presents a distinct set of challenges relative to other retail credit products. Unlike mortgage or personal loan portfolios, two-wheeler financing in emerging markets such as India serves a large population of first-time borrowers with little or no bureau history, making traditional score-based underwriting insufficient on its own. This analysis uses the CRIF High Mark vehicle loan dataset to develop a feature set capable of identifying first-EMI default risk across both scored and thin-file borrower segments.
+Our project is focused on predicting whether a customer for a Vehicle Loan will default based on their financial state at time of borrowing. Default Vehicle loan will default prediction presents a distinct set of challenges relative to other retail credit products. Unlike mortgage or personal loan portfolios,
+two-wheeler financing in emerging markets such as India serves a large
+population of first-time borrowers with little or no bureau history, making
+traditional score-based underwriting insufficient on its own. This analysis
+uses the CRIF High Mark vehicle loan dataset to develop a feature set capable
+of identifying first-EMI default risk across both scored and thin-file borrower
+segments.
 
-This analysis uses the CRIF High Mark vehicle loan dataset to develop a feature set capable of identifying first-EMI default risk across both scored and thin-file borrower segments. The dataset comprises 233,154 disbursed loans with a binary default indicator capturing payment failure on the first EMI due date. A notable characteristic of this population is that 56% of borrowers carry no scoreable bureau history, which necessitates treating thin-file and scored segments with care rather than imputing or ignoring the distinction. Among scored borrowers, the CRIF CNS score serves as the single strongest individual predictor and is encoded here as a 20-level ordered factor preserving the full risk ranking across bands.
+This analysis uses the CRIF High Mark vehicle loan dataset to develop a feature set capable
+of identifying first-EMI default risk across both scored and thin-file borrower
+segments. The dataset comprises 233,154 disbursed loans with a binary default indicator
+capturing payment failure on the first EMI due date. A notable characteristic
+of this population is that 56% of borrowers carry no scoreable bureau history,
+which necessitates treating thin-file and scored segments with care rather than
+imputing or ignoring the distinction. Among scored borrowers, the CRIF CNS
+score serves as the single strongest individual predictor and is encoded here
+as a 20-level ordered factor preserving the full risk ranking across bands.
 
 ```{r}
 #| label: final-report-guidelines
@@ -387,7 +401,12 @@ Thirty-five percent of loans are high loan to value (LTV) of >80%, combined with
 
 After initial examination of this dataset, we were again reminded of the high dimensionality of each observation. We wanted to be able to focus on important features. Given the size of the dataset will already impact the speed of analytical methods, we want to remove as many unnecessary variables as possible. Additionally, there are several columns with missing values or continuous variables that would serve better on translating into categories. 
 
-As such, our feature engineering focused on  translating domain knowledge into model-ready variables: loan structure risk (LTV, implied down payment), borrower demographics (age at disbursement, employment type), identity verification depth (KYC document count), credit utilisation and delinquency history across primary and secondary accounts, EMI burden relative to existing obligations, and recent bureau activity including new account uptake and hard inquiries.
+As such, our feature engineering focused on  translating domain knowledge into model-ready
+variables: loan structure risk (LTV, implied down payment), borrower
+demographics (age at disbursement, employment type), identity verification
+depth (KYC document count), credit utilisation and delinquency history across
+primary and secondary accounts, EMI burden relative to existing obligations,
+and recent bureau activity including new account uptake and hard inquiries.
 
 ```{r}
 #| label: eda-feature-selection2
@@ -750,7 +769,7 @@ x_testing <- testing[, drop_cols]
 #  labs(title = "RF1 Variable Importance", x = "Mean Decrease Gini", y = NULL)
 ```
 
-First, we tried fitting a default random forest classifier to the training data and evaluating its performance on both the training and validation datasets. Due to the strong class imbalance in the loan default variable, the initial models showed poor sensitivity for detecting loan defaults, despite relatively high overall accuracy. The majority of the mis-classifications occurred on loan defaults.
+First, we tried fitting a default random forest classifier to the training data and evaluating its performance on both the training and validation datasets. Due to the strong class imbalance in the loan default variable, the initial models showed poor sensitivity for detecting loan defaults, despite relatively high overall accuracy. 
 
 
 
@@ -803,9 +822,16 @@ ggplot(imp_df, aes(x = MeanDecreaseGini, y = Feature, fill = Highlighted)) +
   )
 ```
 
-Running diagnostics on the default random forest model, we observed that the variable importance results appeared distorted by random forest's default Gini importance metric (Mean Decrease Gini), which favors high-cardinality variables (CURRENT_PINCODE_ID, DATE_OF_BIRTH, DISBURSED_AMOUNT) because they offer more split opportunities, not necessarily because they better predict defaults. Meanwhile, credit-risk variables that should be more informative (PERFORM_CNS_SCORE, delinquency measures, leverage ratio, shown in blue) rank in the middle, likely due to class imbalance rather than a lack of predictive value. We used this information to adjust the switch the importance metric to Mean Decrease Accuracy, along with a balanced sub-sample of each group, and ran again.
+---------------------------------------------
+Some context for why the predictor is failing (Paul)
+---------------------------------------------
+The variable importance results appear distorted by random forest's Gini importance metric, which favors high-cardinality variables (CURRENT_PINCODE_ID, DATE_OF_BIRTH, DISBURSED_AMOUNT) because they offer more split opportunities, not necessarily because they better predict defaults. Meanwhile, credit-risk variables that should be more informative (PERFORM_CNS_SCORE, delinquency measures, leverage ratio, everything in blue) rank in the middle, likely due to class imbalance rather than a lack of predictive value. Before moving forward, we switch the importance metric, instead of decrease gini, we use Mean decrease accuracy and ran again.
 
+--------------------------
+Idea for next steps (Paul):
+--------------------------
 
+Rerun the RF1 with  sampsize   = c(5000, 5000), importance = TRUE, something like the following chunk:
 ```{r}
 #| label: randomforest-model2
 rf.sim2 = randomForest(
@@ -843,9 +869,7 @@ varImpPlot(rf.sim2, type = 1)
  #   # 0 12415    94
  #   # 1  3056    78
 ```
-The resulting model showed a better balance of true positives and true negatives..
-
-NEEDS MORE
+Upon further exploration of the data, we found that random forest was having issues based on the  Gini importance metric, as it favors high-cardinality variables such as CURRENT_PINCODE_ID, DATE_OF_BIRTH, DISBURSED_AMOUNT because they offer more split opportunities, not necessarily because they better predict defaults. Meanwhile, credit-risk variables that should be more informative such as PERFORM_CNS_SCORE, delinquency measures, leverage ratio, and our key predictors rank in the middle, likely due to class imbalance rather than a lack of predictive value. Before moving forward, we switched the importance metric to use Mean decrease accuracy
 
 
 ```{r}
@@ -1012,7 +1036,14 @@ kable(
 
 
 
-We also explored additional tuning strategies including the use of tuneRF() to optimize the mtry parameter and balanced sampling to improve classification performance. The tuned model substantially improved recall for default predictions, though it also increased the number of FALSE positive classifications. While the tuneRf random forest model showed meaningful improvement over the baseline models (Table 2), prediction performance for loan defaults remained moderate, indicating that additional tuning or alternative classification methods may be necessary for highly imbalanced loan data. 
+After adjusting the model parameters we explored additional tuning strategies, including the use of tuneRF() to optimize the mtry parameter and balanced sampling to improve classification performance. The tuned model substantially improved recall for default predictions, though it also increased the number of FALSE positive classifications. While the final random forest model showed meaningful improvement over the baseline models (Table 2), prediction performance for loan defaults remained moderate, indicating that additional tuning or alternative classification methods may be necessary for highly imbalanced loan data. 
+
+
+
+
+
+
+
 
 
 ```{r}
@@ -1162,7 +1193,10 @@ knitr::kable(
 
 
 
-Finally, we trained an XGBoost model to explore if alternative classifiers could improve on the results we were observing in our random forest mode. We utilized the scale_pos_weight parameter when training the model to try compensating for the imbalance in the response variable. After training the model still had low accuracies, with a tested AUC score of 0.5274. We then explored different thresholds and found that 0.10 and 0.15 give better results for the imbalanced data.
+The next model we trained on the cleaned dataset was utilizing an XGBoost classifier. We utilized the scale_pos_weight parameter when training the model to try compensating for the imbalance in the response variable. After training the model still had low accuracies, with a tested AUC score of 0.5274. We then explored different thresholds and found that 0.10 and 0.15 give better results for the imbalanced data. 
+
+It may be necessary to utilize LASSO or other methods to try and remove overlapping variables before training the XGBoost models.
+^^^^ Did we ever use lasso in this? did we ever explore further solutions on XGBoost it seems like we've really under explored that method compared to random forest
 
 ## Comparison of Predicted Results
 
