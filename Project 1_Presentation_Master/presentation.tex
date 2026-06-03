@@ -1,0 +1,386 @@
+\documentclass[aspectratio=169,t,xcolor=table]{beamer}
+\usepackage[utf8]{inputenc}
+
+%\usepackage{multicol}
+\usepackage{booktabs} 
+\usepackage{subcaption}
+
+\usetheme{Ufg}
+
+%-------------------------------------theorems--------------
+\newtheorem{conj}{Conjetura}
+\newtheorem{defi}{Definição}
+\newtheorem{teo}{Teorema}
+\newtheorem{lema}{Lema}
+\newtheorem{prop}{Proposição}
+\newtheorem{cor}{Corolário}
+\newtheorem{ex}{Exemplo}
+\newtheorem{exer}{Exercício}
+
+\setbeamertemplate{theorems}[numbered]
+\setbeamertemplate{caption}[numbered]
+
+%-------------------------------------------------------------%
+%----------------------- Primary Definitions -----------------%
+
+% This command set the default Color, is also possible to choose a custom color
+\setPrimaryColor{UFGBlue} 
+
+% First one is logo in title slide (we recommend use a horizontal image), and second one is the logo used in the remaining slides (we recommend use a square image)
+%\setLogos{lib/logos/infufgw.png}{lib/logos/infufgw.png} 
+
+
+% -------------------------------------- Title Slide Information
+
+
+\begin{document}
+%\title[Inf UFG]{Apresentações Instituto de informática}
+\title{Income, Insurance, and Inequality in Oregon:}
+\subtitle{Insights from the 2020–2024 ACS 5-Year PUMS}
+
+\author{Paul Anderson\inst{1}\\Mike Barton\inst{1}\\Kevin Kincaid\inst{1}}
+
+\institute[OSU] % (optional)
+{
+  \inst{1}%
+   Data Analytics\\
+  College of Science\\
+  Oregon State University
+}
+\date{2026}
+%-----------------------The next statement creates the title page.
+\frame[noframenumbering]{\titlepage}
+
+
+%------------------------------------------------Slide 1
+%Slide 1: 
+%Title: Income, Insurance, and Inequality in Oregon: Insights from the 2020–2024 ACS 5-Year PUMS
+%Authors: Paul Anderson, Michael Barton, Kevin Kincaid
+%Image: Minimal Image so the title reads clearly
+%Footer: course/date
+
+
+
+
+%---------------------------------------------------------Slide 2
+%Slide 2:
+%Title: Data and Approach
+%Layout three columns
+%Data – ACS PUMS 2020-2024, n = 198,000 Oregon Residents
+%Method – OSEMN
+%Tools – Python for API pull, R for EDA and cleaning, survey weights, and inflation-adjusted income
+%Questions
+%Q1 Income predictors
+%Q2 Insurance coverage gap
+%Q3 Income vs. transportation
+
+
+%\section{Changing colors and Layouts}
+
+\setLayout{horizontal} % Example of changing layout
+%\setBGColor{Orange}  %Example of changing background color 
+
+\begin{frame}{Data and Approach}
+    \begin{columns}
+        \column{0.33\textwidth}
+        \textbf{Data}
+        \begin{itemize}
+        \item ACS PUMS 2020-2024
+        \item n = 198,000
+        \item Oregon Residents
+        \end{itemize}
+        
+        \column{0.33\textwidth}
+        \textbf{Method}
+        \begin{itemize}
+        \item OSEMN
+        \end{itemize}
+        
+        \column{0.33\textwidth}
+        \textbf{Tools}
+        \begin{itemize}
+            \item Python: for api call
+            \item R: for EDA and cleaning, survey weights and inflation-adjusted income
+        \end{itemize}
+        
+    \end{columns}
+ %\hrulefill
+  \textbf{ Questions of Interest}
+    \vspace{.25cm}
+    
+    \begin{columns}
+        \column{0.33\textwidth}
+        Q1: Income predictors
+        
+        \column{0.33\textwidth}
+        Q2: Insurance coverage gap
+        
+        \column{0.33\textwidth}
+        Q3: Income vs. transportation
+
+    \end{columns}
+    
+\end{frame}
+%---------------------------------------------------------
+
+
+
+%---------------------------------------------------------Slide 3
+%Slide 3:
+%Title: Q1: What predicts income?
+%4 charts:
+%Income histogram (right-skewed)
+%Log-income histogram (normalized)
+%Income vs. age (inverted-U shape)
+%Income by gender boxplot
+%Callout: Median income: Men ~ $47K | Women ~ $30K
+
+
+
+%\section{Changing colors and Layouts}
+\graphicspath{ {../figures/} }
+\setLayout{horizontal} % Example of changing layout
+%\setBGColor{Orange}  %Example of changing background color 
+
+\begin{frame}{Q1: What predicts income?}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \includegraphics[scale=0.5]{pincp_hist}
+        
+        \column{0.5\textwidth}
+        \includegraphics[scale=0.5]{log_pincp_hist}
+    \end{columns}
+
+    \vspace{.25cm}
+    
+    \begin{columns}
+        \column{0.5\textwidth}
+        \includegraphics[scale=0.5]{eda-incomevage-plot}
+        
+        \column{0.5\textwidth}
+        \includegraphics[scale=0.5]{eda-incomevgender-plot}
+        \\
+        \colorbox{white!30}{\tiny Note: Median income: Men \sim $47K | Women \sim $30K}
+
+    \end{columns}
+    
+\end{frame}
+%---------------------------------------------------------
+
+
+
+%---------------------------------------------------------Slide 4
+%Slide 4
+%Title: Q1: Modeling income
+%Left: Model equation
+%Income = Age + Age² + Education + Gender + Race + Birthplace + Household Size
+%Right: Key results
+%Education: +$2,700 per year
+%Female: −$10,000
+%Self-employed: +$3,800
+%Bottom: R^2 ~ 0.12
+
+
+
+
+%\section{Changing colors and Layouts}
+\setLayout{horizontal} % Example of changing layout
+%\setBGColor{Orange}  %Example of changing background color 
+
+\begin{frame}{Q1: Modeling income}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \textbf{Model equation:} \\
+        Income = Age + Age² + Education + Gender + Race + Birthplace + Household Size
+        \column{0.5\textwidth}
+        \textbf{Key results:}
+         \begin{itemize}
+        \item Education: +$2,700 per year
+        \item Female: −$10,000
+        \item Self-employed: +$3,800
+        \end{itemize}
+    \end{columns}
+\textbf{R^2 \sim 0.12}
+    
+\end{frame}
+%---------------------------------------------------------
+
+
+
+%---------------------------------------------------------Slide 5
+%Slide 5
+%Title: Q2: Who is uninsured in Oregon?
+%Main chart: Uninsured rate by citizenship
+%US-born: ~5%
+%Naturalized: ~6%
+%Non-citizen: ~26%
+%Highlight: Non-citizens ~ +21 percentage points
+%Secondary chart: Employment breakdown
+%Response variable: UNINSURED (binary)
+
+%\section{Changing colors and Layouts}
+\setLayout{horizontal} % Example of changing layout
+%\setBGColor{Orange}  %Example of changing background color 
+
+\begin{frame}{Q2: Who is uninsured in Oregon?}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \includegraphics[scale=0.5]{q2-eda-citizenship}%{q2-odds-ratios}
+        \column{0.5\textwidth}
+        \includegraphics[scale=0.5]{q2-uninsured-rate-by-citizenship}
+    \end{columns}
+\end{frame}
+%---------------------------------------------------------
+
+
+
+
+%---------------------------------------------------------Slide 6
+%Slide 6
+%Title: Q2: The gap persists after controls
+%Visual: Odds ratios (reduced vs full model) table
+%Non-citizen: 6.18 > 4.64
+%Naturalized: 1.31
+%Model fit: McFadden R^2: 0.075 > 0.135
+
+%\section{Changing colors and Layouts}
+\begin{frame}{Q2: The gap persists after controls}
+\setLayout{horizontal} % Example of changing layout
+%\setBGColor{Orange}  %Example of changing background color 
+Full Model: UNINSURED \sim CIT + POVPIP + SCHL\_group + ESR\_group + NP + AGEP + RAC1P + HISP\_binary\\
+Reduced Model: UNINSURED \sim CIT + POVPIP
+\\
+\includegraphics[scale=0.5]{q2-odds-ratios-table}
+    
+\end{frame}
+%---------------------------------------------------------
+
+
+
+
+%---------------------------------------------------------Slide 7
+%Highlighting text
+\setLayout{horizontal}
+\begin{frame}{Q3: Income vs Transportation}
+    Can income be predicted accurately from commute and location information
+    
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{figure}
+          \includegraphics[width=1.0\textwidth]{q3-commute}
+          \caption{Income vs Commute Time}
+          \label{Income vs Commute Time}
+        \end{figure}
+        
+        \column{0.5\textwidth}
+        \begin{figure}
+          \includegraphics[width=1.0\textwidth]{q3-area}
+          \caption{Income by Area Zone}
+          \label{Income by Area Zone}
+        \end{figure}
+        
+    \end{columns}
+    
+\end{frame}
+%---------------------------------------------------------
+
+
+%---------------------------------------------------------Slide 8
+\setLayout{vertical}
+\begin{frame}{Q3: Modeling}
+     $PINCP \sim JWMNP + VEH + factor(JWTRNS) + factor(PUMA)
+     
+    \begin{figure}
+      \includegraphics[width=0.65\textwidth]{q3-predict}
+      \caption{Model Prediction (400 trials)}
+      \label{Model Prediction}
+    \end{figure}
+     
+    
+\end{frame}
+%-------------------------------------------------------
+
+
+
+
+%---------------------------------------------------------Slide 9
+%Slide 8
+%Title: What we learned
+%Three takeaways:
+%Income: Education, age, gender, and labor supply are key predictors
+%Insurance: Large, persistent coverage gap for non-citizens
+%Transportation: Useful but limited predictor of income
+%Bottom:
+%Policy implication: Expanding coverage eligibility could reduce disparities
+%Data source: U.S. Census Bureau, ACS 2020–2024
+
+%\section{Changing colors and Layouts}
+\setLayout{horizontal} % Example of changing layout
+%\setBGColor{Orange}  %Example of changing background color 
+
+
+
+\begin{frame}{What we learned}
+        \textbf{\Large Takeaways:}
+        \begin{itemize}
+        \item Income: Education, age, gender, and labor supply are key predictors
+        \item Insurance: Large, persistent coverage gap for non-citizens
+        \item Transportation: Useful but limited predictor of income
+        \end{itemize}
+
+        \textbf{
+        Policy implication: Expanding coverage eligibility could reduce disparities \\
+        Data source: U.S. Census Bureau, ACS 2020–2024
+        }
+    
+\end{frame}
+%---------------------------------------------------------
+
+
+
+
+%---------------------------------------------------------Slide 10
+%Slide 9
+%Title: Future Directions
+%Expanding our income model’s efficacy by testing on other years and states
+
+%\section{Changing colors and Layouts}
+\setLayout{horizontal} % Example of changing layout
+%\setBGColor{Orange}  %Example of changing background color 
+
+\begin{frame}{Future Directions}
+Expanding our various models' efficacy by testing on other years, states, census datasets
+\vspace{.25cm}
+
+\\\\
+\textbf{\Large Obstacles}
+ \begin{itemize}
+        \item Data Ingestion: Programmatic API Calls
+        \item Calculating person weights and inflation adjustment
+        \item Urban vs Rural computation complexity
+        \end{itemize}
+    
+\end{frame}
+%---------------------------------------------------------
+
+
+
+
+
+%---------------------------------------------------------Slide 11
+%Slide 10
+%Thanks: Image of an Oregon City
+
+%\section{Changing colors and Layouts}
+\setLayout{blank} % Example of changing layout
+%\setBGColor{Orange}  %Example of changing background color 
+\begin{frame}{Thanks!}
+
+\includegraphics[scale=0.5]{willamette}
+
+\end{frame}
+%---------------------------------------------------------
+
+
+
+\end{document}

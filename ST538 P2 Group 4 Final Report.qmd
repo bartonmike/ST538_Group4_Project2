@@ -25,6 +25,7 @@ score serves as the single strongest individual predictor and is encoded here
 as a 20-level ordered factor preserving the full risk ranking across bands.
 
 ```{r}
+#| label: final-report-guidelines
 #| include: FALSE
 #| echo: FALSE
 # Write a report based on the statistical analysis in this project. As described in the project outline page, write the report following those directions.
@@ -46,6 +47,7 @@ as a 20-level ordered factor preserving the full risk ranking across bands.
 
 
 ```{r}
+#| label: libraries
 #| include: FALSE
 #| warning: FALSE
 #| echo: FALSE
@@ -69,6 +71,7 @@ library(pROC)
 
 
 ```{r}
+#| label: data-download
 #| include: FALSE
 #| warning: FALSE
 #| echo: FALSE
@@ -88,6 +91,7 @@ str(train_dat)
 ```
 
 ```{r}
+#| label: eda-na-check
 #| include: FALSE
 #| echo: FALSE
 
@@ -103,6 +107,7 @@ sapply(train_dat, anyNA)
 ## Feature extraction and description
 
 ```{r}
+#| label: eda-feature-selection1
 #| include: FALSE
 #| echo: FALSE
 #| warning: FALSE
@@ -356,38 +361,39 @@ train_dat <- train_dat %>%
 
 
 ```{r}
+#| label: eda-graph-exploration
 #| message: FALSE
 #| warning: FALSE
-  #head(train_dat)
-  #add graphs to demonstrate everything in the paragraph below
-  
-  #high loan to value
-  #thin file defaults
-  #age bands default vs no default
-  library(ggplot2)
-  train_dat |>  
-    filter(LOAN_DEFAULT == 1) |>
-    ggplot(aes(factor(age_at_disbursal), LTV)) + 
-    geom_boxplot(color = 'red') + 
-    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
-    ggtitle("LTV Distribution by Age for Defaulted Loans") +
-    theme(plot.title = element_text(hjust = 0.5))
-
-  train_dat |>  
-    filter(LOAN_DEFAULT == 0) |>
-    ggplot(aes(factor(age_at_disbursal), LTV)) + 
-    geom_boxplot(color = 'blue')+ 
-    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
-    ggtitle("LTV Distribution by Age for Active Loans") +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-  train_dat |>  
-    filter(LOAN_DEFAULT == 1) |>
-    ggplot(aes(credit_history_months)) + 
-    geom_histogram(bins = 30) + 
-    labs(x = "Months of Credit History", y = "Number of Defaulted Borrowers") +
-    ggtitle("Defaulted Borrowers by Months of Credit History") +
-    theme(plot.title = element_text(hjust = 0.5))
+  # #head(train_dat)
+  # #add graphs to demonstrate everything in the paragraph below
+  # 
+  # #high loan to value
+  # #thin file defaults
+  # #age bands default vs no default
+  # library(ggplot2)
+  # train_dat |>  
+  #   filter(LOAN_DEFAULT == 1) |>
+  #   ggplot(aes(factor(age_at_disbursal), LTV)) + 
+  #   geom_boxplot(color = 'red') + 
+  #   labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
+  #   ggtitle("LTV Distribution by Age for Defaulted Loans") +
+  #   theme(plot.title = element_text(hjust = 0.5))
+  # 
+  # train_dat |>  
+  #   filter(LOAN_DEFAULT == 0) |>
+  #   ggplot(aes(factor(age_at_disbursal), LTV)) + 
+  #   geom_boxplot(color = 'blue')+ 
+  #   labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
+  #   ggtitle("LTV Distribution by Age for Active Loans") +
+  #   theme(plot.title = element_text(hjust = 0.5))
+  # 
+  # train_dat |>  
+  #   filter(LOAN_DEFAULT == 1) |>
+  #   ggplot(aes(credit_history_months)) + 
+  #   geom_histogram(bins = 30) + 
+  #   labs(x = "Months of Credit History", y = "Number of Defaulted Borrowers") +
+  #   ggtitle("Defaulted Borrowers by Months of Credit History") +
+  #   theme(plot.title = element_text(hjust = 0.5))
   
 ```
 
@@ -403,6 +409,7 @@ primary and secondary accounts, EMI burden relative to existing obligations,
 and recent bureau activity including new account uptake and hard inquiries.
 
 ```{r}
+#| label: eda-feature-selection2
 #| include: FALSE
 #| echo: FALSE
 #| warning: FALSE
@@ -453,6 +460,7 @@ print(data.frame(
 
 
 ```{r}
+#| label: eda-feature-selection3-stress-score-table
 #| echo: FALSE
 # default rate by stress score table
 stress_table <- train_dat %>%
@@ -488,6 +496,7 @@ To consolidate the risk signals across categories, we constructed a composite st
 The additive structure is intentional. Rather than weighting any single factor, the score reflects simultaneous stress across multiple dimensions. A borrower with a high LTV alone is a manageable risk, a borrower who is also recently delinquent, has no credit history, and carries no bureau score represents a fundamentally different profile. The score ranges from 0 to 6, and we additionally derived high_stress_flag as a binary indicator for scores of 3 or more. Initial cross-tabulation confirms that the stress score tracks default rate monotonically, rising from 15% at score 0 to 49% at score 5, nearly a 3x lift, providing early evidence that the engineered features carry meaningful signal.
 
 ```{r}
+#| label: eda-feature-selection4-stress-score-graph
 #| echo: FALSE
 # default rate by stress score graphically
 stress_summary <- train_dat %>%
@@ -534,6 +543,7 @@ ggplot(stress_summary, aes(x = factor(stress_score))) +
 The figure confirms that the stress score functions as an effective risk signal. Default rate rises monotonically from 15% at score 0 to 49% at score 5, a threefold increase across the range. The majority of borrowers fall at score 2, where the default rate of 21.5% closely tracks the overall population rate, reflecting the modal profile of a borrower who is thin-file and high-LTV but has no active delinquency. The steepest step in the gradient occurs between scores 2 and 3, where the default rate jumps nearly 8 percentage points, suggesting that the primary overdue and recent delinquency flags carry disproportionate weight once a borrower already carries structural risk. Scores 4 and 5 represent a small combined segment of under 900 borrowers but carry default rates of 42% and 49% respectively, and are retained in the feature set given their strong signal. Notably, even score 0 borrowers default at a rate of 15%, a reminder that first-EMI default in this market reflects payment intent as much as financial capacity. While the stress score is included as a standalone feature, the individual component flags are also retained, as tree-based models may capture non-linear interactions among them that the additive score cannot express.
 
 ```{r}
+#| label: eda-feature-selection5
 #| echo: FALSE
 #| include: TRUE
 
@@ -586,14 +596,18 @@ knitr::kable(feature_index_wide, format = "simple", col.names = c("Category", "F
 
 
 ```{r}
+#| label: data-spltting-thin-normal
 #| echo: FALSE
 #| include: FALSE
+
+# Splitting between thin file and normal
 train_dat_normal <- train_dat %>%
   filter(thin_file_flag == 0)
 
 train_dat_thin <- train_dat %>%
   filter(thin_file_flag == 1)
 
+# Check counts of each
 cbind(count(train_dat_normal),count(train_dat_thin))
 ```
 
@@ -612,6 +626,7 @@ Finally, the four weakest KYC flags were dropped in favor of the summary measure
 ## I THINK THE ABOVE MIGHT GO ON FOR TWO LONG, especially as we do a lot of other stuff in this section
 
 ```{r}
+#| label: data-split-train-validate-test
 #| echo: FALSE
 #| include: FALSE
 
@@ -667,6 +682,7 @@ rbind(count(training), count(validation), count(testing))
 
 
 ```{r}
+#| label: randomforest-data-cleaning
 #| echo: FALSE
 #| include: FALSE
 
@@ -714,6 +730,7 @@ x_testing <- testing[, drop_cols]
 
 
 ```{r}
+#| label: randomforest-model1
  #| echo: FALSE
  #| include: FALSE
     rf.sim1 = randomForest(training[drop_cols], 
@@ -723,6 +740,7 @@ x_testing <- testing[, drop_cols]
 
 
 ```{r}
+#| label: randomforest-model1-pred-validation
  #| echo: FALSE
  #| include: FALSE
     pred.rf.sim1 = rf.sim1$predicted
@@ -756,6 +774,7 @@ First, we tried fitting a default random forest classifier to the training data 
 
 
 ```{r}
+#| label: randomforest-model1-diagnostics
 #| fig.height: 8
 #| fig.width: 6
 # Theoretically meaningful variables — highlighted regardless of Gini rank
@@ -814,7 +833,8 @@ Idea for next steps (Paul):
 
 Rerun the RF1 with  sampsize   = c(5000, 5000), importance = TRUE, something like the following chunk:
 ```{r}
-rf.sim1 = randomForest(
+#| label: randomforest-model2
+rf.sim2 = randomForest(
   training[drop_cols],
   factor(training$LOAN_DEFAULT),
   sampsize   = c(5000, 5000),
@@ -823,26 +843,26 @@ rf.sim1 = randomForest(
 ```
 
 ```{r}
+#| label: randomforest-model2-graph
 # graph the output on accuracy score
-varImpPlot(rf.sim1, type = 1)
+varImpPlot(rf.sim2, type = 1)
 ```
 
 
-```{r}
-varImpPlot(rf.sim1, type = 1)
-```
+
 
 
 ```{r}
+#| label: randomforest-model2-pred-validation
  #| echo: FALSE
  #| include: TRUE
-  pred.val.rf.sim1 <- predict(
-    rf.sim1,
+  pred.val.rf.sim2 <- predict(
+    rf.sim2,
     newdata = x_validation,
     type = "class"
   )
   
-  table(validation[,41], pred.val.rf.sim1)
+  table(validation[,41], pred.val.rf.sim2)
  # 
  #   #  pred.rf.sim1
  #   #       0     1
@@ -853,6 +873,7 @@ Upon further exploration of the data, we found that random forest was having iss
 
 
 ```{r}
+#| label: randomforest-old-model2
 # #| echo: FALSE
 # #| include: FALSE
 #  rf.sim2 <- randomForest(
@@ -867,6 +888,7 @@ Upon further exploration of the data, we found that random forest was having iss
 
 
 ```{r}
+#| label: randomforest-old-model2-prediction
 # #| echo: FALSE
 # #| include: FALSE
 # # 
@@ -896,6 +918,7 @@ Upon further exploration of the data, we found that random forest was having iss
 
 
 ```{r}
+#| label: randomforest-model-rftune
 #| echo: FALSE
 #| include: FALSE
 
@@ -915,6 +938,7 @@ Upon further exploration of the data, we found that random forest was having iss
 
 
 ```{r}
+#| label: randomforest-model-rftune-prediction
 #| echo: FALSE
 #| include: FALSE
 
@@ -939,6 +963,7 @@ Upon further exploration of the data, we found that random forest was having iss
 
 
 ```{r}
+#| label: randomforest-model-rftune-prediction
 #| echo: FALSE
 #| include: FALSE
 
@@ -966,6 +991,7 @@ Upon further exploration of the data, we found that random forest was having iss
 ```
 
 ```{r}
+#| label: randomforest-model-comparison-table
 #| echo: FALSE
 #| warning: FALSE
 
@@ -1016,16 +1042,12 @@ After adjusting the model parameters we explored additional tuning strategies, i
 
 
 
-```{r}
-#| include: FALSE
-#| warning: FALSE
-#| echo: FALSE
-# Let's try going back to LASSO, see which features we get
-```
+
 
 
 
 ```{r}
+#| label: xgboost-model1
 #| include: FALSE
 #| warning: FALSE
 #| echo: FALSE
@@ -1100,6 +1122,7 @@ xgb_model <- xgb.train(
 ```
 
 ```{r}
+#| label: xgboost-model1-prediction
 #| warning: FALSE
 #| echo: FALSE
 # Get predictions
@@ -1117,6 +1140,7 @@ kable(as.data.frame.matrix(conf_mat),
 ```
 
 ```{r}
+#| label: xgboost-model1-auc
 #| warning: FALSE
 #| echo: FALSE
 #| include: FALSE
@@ -1128,6 +1152,7 @@ auc(roc_obj)
 
 
 ```{r}
+#| label: xgboost-model1-diagnostics
 #| warning: FALSE
 #| echo: FALSE
 
@@ -1166,6 +1191,8 @@ knitr::kable(
 ```
 
 
+
+
 The next model we trained on the cleaned dataset was utilizing an XGBoost classifier. We utilized the scale_pos_weight parameter when training the model to try compensating for the imbalance in the response variable. After training the model still had low accuracies, with a tested AUC score of 0.5274. We then explored different thresholds and found that 0.10 and 0.15 give better results for the imbalanced data. 
 
 It may be necessary to utilize LASSO or other methods to try and remove overlapping variables before training the XGBoost models.
@@ -1174,6 +1201,7 @@ It may be necessary to utilize LASSO or other methods to try and remove overlapp
 ## Comparison of Predicted Results
 
 ```{r}
+#| label: all-models-pred-test-data
 # Lets see how it does on our test data.
 
 
@@ -1200,29 +1228,24 @@ It may be necessary to utilize LASSO or other methods to try and remove overlapp
 
  
  
-# XGB Score on the test data 
-test_prob <- predict(xgb_model, dtest)
-
-test_class <- ifelse(test_prob > 0.30, 1, 0)
-
+# # XGB Score on the test data 
+# test_prob <- predict(xgb_model, dtest)
 # 
-conf_mat <- table(
-  Actual = x_test,
-  Predicted = y_test
-)
-
+# test_class <- ifelse(test_prob > 0.30, 1, 0)
 # 
-kable(as.data.frame.matrix(conf_mat),
-      caption = "Confusion Matrix")
+# # 
+# conf_mat <- table(
+#   Actual = x_test,
+#   Predicted = y_test
+# )
+# 
+# # 
+# kable(as.data.frame.matrix(conf_mat),
+#       caption = "Confusion Matrix")
 ```
 
 
 
-```{r}
-# Lets compare all the methods together
-
-#ggplot
-```
 
 
 Above are the results for our improved Randomforest and XGBoost. As we can see the tuned methods still issues with accuracy and imbalances. 
