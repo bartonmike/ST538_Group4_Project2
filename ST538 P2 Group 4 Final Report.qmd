@@ -649,7 +649,7 @@ testing   <- not_training[!train_sample, ]
 
 rbind(count(training), count(validation), count(testing))
 
-# # Did they default?
+# # Did they default? Quick count check from our random sample
 # train_dat |>
 #   summarise(
 #     defaulted_yes_overall = sum(LOAN_DEFAULT == 1),
@@ -672,83 +672,95 @@ rbind(count(training), count(validation), count(testing))
 ```
 
 
-```{r}
-#| echo: false
-#| include: false
-  #sapply(testing[,c(-10, -56, -66, -41)], anyNA)
-  
-```
 
 ```{r}
 #| echo: false
 #| include: false
-  head(training[,c(-1, -5, -7, -10, -11, -12, -13, -14, -17, -18, -19, -26, -27, -29, -31, -32, -33, -35, -56, -66, -41)])
+
+
+# Check number of NA's per column
+sapply(train_dat, function(x) sum(is.na(x)))
+
 
  #which(names(training) %in% c("new_loan_emi_ratio","STATE_ID"))
   # the following have NA values which do not work with forest
   #10 EMPLOYMENT_TYPE
   #56 thin_file_reason
+
   #66 new_loan_emi_ratio
   
   #41 is predictor LOAN_DEFAULT
-  sapply(training,anyNA)
   #sapply(training[,c(-10, -56, -66, -42)], anyNA)
   
   #training |> filter(is.na(thin_file_reason))
   #training |> filter(is.na(high_stress_flag))
-  
+
+# Columns that have NA's or are non-pertinent (UNIQUE_ID, MANUFACTURER_ID, etc)  
 drop_cols <- c(-1, -5, -7, -10, -11, -12, -13,
                -14, -17, -18, -19, -26, -27,
                -29, -31, -32, -33, -35,
                -56, -66, -41)
 
-# Save the filtered data into variables to make it easier
+# Column numbers being dropped
+drop_idx <- abs(drop_cols)
+
+# Column names being dropped
+names(train_dat)[drop_idx]
+
+
+# head(training[drop_cols])
+
+# Save the filtered data into new variables to make it easier
+# but leave the original variables with all columns
 x_training <- training[, drop_cols]
 x_validation <- validation[, drop_cols]
+x_testing <- testing[, drop_cols]
+
+# NOTE: x_training, etc are not consistently used, instead I was using training[, drop_cols] which is the equivalent.
 ```
 
 
 ```{r}
-# #| echo: false
-# #| include: false
-#    rf.sim1 = randomForest(training[,c(-1, -5, -7, -10, -11, -12, -13, -14, -17, -18, -19, -26, -27, -29, -31, -32, -33, -35, -56, -66, -41)], 
-#                           factor(training$LOAN_DEFAULT))
+ #| echo: false
+ #| include: false
+    rf.sim1 = randomForest(training[drop_cols], 
+                           factor(training$LOAN_DEFAULT))
 
 ```
 
 
 ```{r}
-# #| echo: false
-# #| include: false
-#    pred.rf.sim1 = rf.sim1$predicted
-#    table(training[,41], pred.rf.sim1)
-#    
-#    varImpPlot(rf.sim1)
-#   # 
-# 
-#   # #training |> filter(high_stress_flag == 1)
-#   # 
-#   # #    pred.rf.sim1
-#   # #       0     1
-#   # # 0 57124   395
-#   # # 1 14256   355
+ #| echo: false
+ #| include: false
+    pred.rf.sim1 = rf.sim1$predicted
+    table(training[,41], pred.rf.sim1)
+    
+    varImpPlot(rf.sim1)
+   # 
+ 
+   # #training |> filter(high_stress_flag == 1)
+   # 
+   # #    pred.rf.sim1
+   # #       0     1
+   # # 0 57124   395
+   # # 1 14256   355
 ```
 
 ```{r}
-# #| echo: false
-# #| include: false
-#  pred.val.rf.sim1 <- predict(
-#    rf.sim1,
-#    newdata = x_validation,
-#    type = "class"
-#  )
-#  
-#  table(validation[,41], pred.val.rf.sim1)
-# # 
-# #   #  pred.rf.sim1
-# #   #       0     1
-# #   # 0 12415    94
-# #   # 1  3056    78
+ #| echo: false
+ #| include: false
+  pred.val.rf.sim1 <- predict(
+    rf.sim1,
+    newdata = x_validation,
+    type = "class"
+  )
+  
+  table(validation[,41], pred.val.rf.sim1)
+ # 
+ #   #  pred.rf.sim1
+ #   #       0     1
+ #   # 0 12415    94
+ #   # 1  3056    78
 ```
 
 
@@ -756,10 +768,7 @@ x_validation <- validation[, drop_cols]
 # #| echo: false
 # #| include: false
 #  rf.sim2 <- randomForest(
-#    x = training[, c(-1, -5, -7, -10, -11, -12, -13,
-#                     -14, -17, -18, -19, -26, -27,
-#                     -29, -31, -32, -33, -35,
-#                     -56, -66, -41)],
+#    x = training[drop_cols],
 #    
 #    y = factor(training$LOAN_DEFAULT),
 #  
@@ -797,28 +806,13 @@ x_validation <- validation[, drop_cols]
 ```
 
 
-```{r}
-#| echo: false
-#| include: false
-# CURRENTLY TOO LARGE!!!
-# Random Forest Classifier for Digit Recognition Data
-  #rf.digit = randomForest(training[,c(-10, -56, -66, -41)], factor(training$LOAN_DEFAULT),  xtest = testing[,c(-10, -56, -66, -41)], factor(testing$LOAN_DEFAULT),  importance = T, proximity = T)
-  # Predicted response labels
-  #rfPred.digit = (rf.digit$test)$predicted
-  # Misclassification errors in the test data
- # table(digit_no.test, rfPred.digit)  
-  # Variable Importance Plot
-  #varImpPlot(rf.digit)  
-```
-
-
-
 
 ```{r}
 #| echo: false
 #| include: false
 
 # https://www.statology.org/random-forest-in-r/
+# Trying to optimize with RFTune
 # Commented out to allow the doc to render faster
 # tune.rf <- tuneRF(
 #   x = training[, drop_cols],
@@ -1088,211 +1082,6 @@ Next we trained XGBoost classifiers on our cleaned dataset. We did utilize the s
 
 
 
-
-
-```{r}
-# Applying SMOTE
-#install.packages("ROSE")
-library(ROSE)
-
-set.seed(2026)
-
-# use our drop_cols but add back in Loan default
-rose_drop_cols <- c(-1, -5, -7, -10, -11, -12, -13,
-               -14, -17, -18, -19, -26, -27,
-               -29, -31, -32, -33, -35,
-               -56, -66)
-
-# get our cleaned up data for SMOTE/ROSE
-train_dat_rose <- train_dat_normal[, rose_drop_cols]
-
-# We need to futher clean it, disbursal date is covered elsewhere
-train_dat_rose <- train_dat_normal[, rose_drop_cols] %>%
-  select(-disbursal_date) %>%
-  mutate(
-    LOAN_DEFAULT = factor(LOAN_DEFAULT),
-    cns_score_factor = factor(cns_score_factor)
-  ) %>%
-  na.omit()
-
-# Remove any character columns
-train_dat_rose <- train_dat_rose %>%
-  select(-where(is.character))
-
-# Make cns_score a true factor
-train_dat_rose$cns_score_factor <-
-  factor(train_dat_rose$cns_score_factor, ordered = FALSE)
-
-# get our count
-table(train_dat_rose$LOAN_DEFAULT)
-
-smote_data <- ROSE(
-  LOAN_DEFAULT ~ .,
-  data = train_dat_rose,
-  N = 40000,
-  p = 0.5
-)$data
-
-table(smote_data$LOAN_DEFAULT)
-```
-
-```{r}
-names(train_dat_rose)[sapply(train_dat_rose, is.character)]
-
-sapply(train_dat_rose, class)
-
-
-
-sum(!complete.cases(train_dat_rose))
-
-colSums(is.na(train_dat_rose))[colSums(is.na(train_dat_rose)) > 0]
-
-which(names(train_dat_rose) == "LOAN_DEFAULT")
-```
-
-```{r}
-#| echo: false
-#| include: false
-
-set.seed(2026)
-
-# Set our splits
-train_percent <- 0.7
-not_train_percent <- 0.3
-
-# not_train split up 
-validate_percent <- 0.5 # Ends up being 0.15
-test_percent <- 0.5 # Ends up being 0.15
-
-
-# splitting into train/not_train -   this had an error with nrow(train_dat) producing too long of a sample
-sample <- sample(c(TRUE, FALSE), nrow(train_dat_rose), replace=TRUE, prob=c(train_percent,not_train_percent))
-smote_training  <- train_dat_rose[sample, ]
-
-
-
-smote_not_training   <- train_dat_rose[!sample, ]
-
-# splitting into validation/test
-train_sample <- sample(c(TRUE, FALSE), nrow(not_training), replace=TRUE, prob=c(validate_percent,test_percent))
-smote_validation  <- smote_not_training[train_sample, ]
-smote_testing   <- smote_not_training[!train_sample, ]
-
-
-rbind(count(smote_training), count(smote_validation), count(smote_testing))
-
-# # Did they default?
-# train_dat |>
-#   summarise(
-#     defaulted_yes_overall = sum(LOAN_DEFAULT == 1),
-#     defaulted_no_overall = sum(LOAN_DEFAULT == 0)
-#     
-#   )
-# 
-# train |>
-#   summarise(
-#     defaulted_yes_train = sum(LOAN_DEFAULT == 1),
-#     defaulted_no_train = sum(LOAN_DEFAULT == 0)
-#   )
-# 
-# test |>
-#   summarise(
-#     defaulted_yes_test = sum(LOAN_DEFAULT == 1),
-#     defaulted_no_test = sum(LOAN_DEFAULT == 0)
-#     
-#   )
-```
-
-
-
-
-
-
-
-```{r}
-#| echo: false
-#| include: false
-   smote.rf.sim1 = randomForest(smote_training[,c(-19)], 
-                          factor(smote_training$LOAN_DEFAULT))
-```
-
-
-```{r}
-#| echo: false
-#| include: false
-   smote.pred.rf.sim1 = smote.rf.sim1$predicted
-   table(smote_training[,19], smote.pred.rf.sim1)
-  
-   varImpPlot(smote.rf.sim1)
-  
-
-   #training |> filter(high_stress_flag == 1)
-  
-   #    pred.rf.sim1
-   #       0     1
-   # 0 57124   395
-   # 1 14256   355
-```
-
-```{r}
-#| echo: false
-##| include: false
- smote.pred.val.rf.sim1 <- predict(
-   smote.rf.sim1,
-   newdata = smote_validation,
-   type = "class"
- )
- 
- table(smote_validation[,19], smote.pred.val.rf.sim1)
-# 
-#   #  pred.rf.sim1
-#   #       0     1
-#   # 0 12415    94
-#   # 1  3056    78
-```
-
-
-```{r}
-#| echo: false
-##| include: false
- smote.rf.sim2 <- randomForest(
-   x = smote_training[, c(-19)],
-   
-   y = factor(smote_training$LOAN_DEFAULT),
- 
-   ntree = 500,
-   importance = TRUE
- )
-```
-
-
-```{r}
-#| echo: false
-##| include: false
-# 
- smote.pred.rf.sim2 <- smote.rf.sim2$predicted
- table(smote_training[,19], smote.pred.rf.sim2)
- # pred.rf.sim2
- #         0     1
- #   0 57132   387
- #   1 14246   365
- 
- smote.pred.val.rf.sim2 <- predict(
-   smote.rf.sim2,
-   newdata = smote_validation,
-   type = "class"
- )
- 
- 
- table(smote_validation[,19], smote.pred.val.rf.sim2)
-# 
-# 
-#   #  pred.rf.sim2
-#   #       0     1
-#   # 0 12407   102
-#   # 1  3058    76
-```
-
 ```{r}
 # Lets see how it does on our test data.
 
@@ -1301,46 +1090,23 @@ rbind(count(smote_training), count(smote_validation), count(smote_testing))
 # Test Data on random forest 1
  pred.test.rf.sim1 <- predict(
    rf.sim1,
-   newdata = testing[, c(-1, -5, -7, -10, -11, -12, -13,
-                    -14, -17, -18, -19, -26, -27,
-                    -29, -31, -32, -33, -35,
-                    -56, -66, -41)],
+   newdata = testing[drop_cols],
    type = "class"
  )
  table(testing[,41], pred.test.rf.sim1)
 
 # Test Data on random forest 2 
- pred.test.rf.sim2 <- predict(
-   rf.sim2,
-   newdata = testing[, c(-1, -5, -7, -10, -11, -12, -13,
-                    -14, -17, -18, -19, -26, -27,
-                    -29, -31, -32, -33, -35,
-                    -56, -66, -41)],
-   type = "class"
- )
- table(testing[,41], pred.test.rf.sim2)
+ # pred.test.rf.sim2 <- predict(
+ #   rf.sim2,
+ #   newdata = testing[drop_cols],
+ #   type = "class"
+ # )
+ # table(testing[,41], pred.test.rf.sim2)
 
 
 
 
 
-
-# Test Data on smote random forest 1
- smote.pred.test.rf.sim1 <- predict(
-   smote.rf.sim1,
-   newdata = smote_testing,
-   type = "class"
- )
- table(smote_testing[,19], smote.pred.test.rf.sim1)
-
-# Test Data on smote random forest 2 
- smote.pred.test.rf.sim2 <- predict(
-   smote.rf.sim2,
-   newdata = smote_testing,
-   type = "class"
- )
- table(smote_testing[,19], smote.pred.test.rf.sim2)
- 
  
  
 # XGB Score on the test data 
