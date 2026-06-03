@@ -1021,71 +1021,71 @@ We also explored additional tuning strategies including the use of tuneRF() to o
 #| warning: FALSE
 #| echo: FALSE
 
-# XG Boost
-
-# convert to matrices
-x_train <- model.matrix(
-  ~ . - 1,
-  data = training[, drop_cols]
-)
-
-x_valid <- model.matrix(
-  ~ . - 1,
-  data = validation[, drop_cols]
-)
-
-x_test <- model.matrix(
-  ~ . - 1,
-  data = testing[, drop_cols]
-)
-
-
-
-y_train <- training$LOAN_DEFAULT
-y_valid <- validation$LOAN_DEFAULT
-y_test <- testing$LOAN_DEFAULT
-
-
-# Deal with the imbalance
-scale_pos_weight <- sum(y_train == 0) / sum(y_train == 1)
-
-scale_pos_weight
-
-
-# Training matrices
-dtrain <- xgb.DMatrix(
-  data = x_train,
-  label = y_train
-)
-
-dvalid <- xgb.DMatrix(
-  data = x_valid,
-  label = y_valid
-)
-
-dtest <- xgb.DMatrix(
-  data = x_test,
-  label = y_test
-)
-
-# Initial XGBoost model
-params <- list(
-  objective = "binary:logistic",
-  eval_metric = "auc",
-  max_depth = 6,
-  eta = 0.05,
-  subsample = 0.8,
-  colsample_bytree = 0.8,
-  scale_pos_weight = scale_pos_weight
-)
-
-xgb_model <- xgb.train(
-  params = params,
-  data = dtrain,
-  nrounds = 300,
-  watchlist = list(train = dtrain, validation = dvalid),
-  verbose = 1
-)
+# # XG Boost
+# 
+# # convert to matrices
+# x_train <- model.matrix(
+#   ~ . - 1,
+#   data = training[, drop_cols]
+# )
+# 
+# x_valid <- model.matrix(
+#   ~ . - 1,
+#   data = validation[, drop_cols]
+# )
+# 
+# x_test <- model.matrix(
+#   ~ . - 1,
+#   data = testing[, drop_cols]
+# )
+# 
+# 
+# 
+# y_train <- training$LOAN_DEFAULT
+# y_valid <- validation$LOAN_DEFAULT
+# y_test <- testing$LOAN_DEFAULT
+# 
+# 
+# # Deal with the imbalance
+# scale_pos_weight <- sum(y_train == 0) / sum(y_train == 1)
+# 
+# scale_pos_weight
+# 
+# 
+# # Training matrices
+# dtrain <- xgb.DMatrix(
+#   data = x_train,
+#   label = y_train
+# )
+# 
+# dvalid <- xgb.DMatrix(
+#   data = x_valid,
+#   label = y_valid
+# )
+# 
+# dtest <- xgb.DMatrix(
+#   data = x_test,
+#   label = y_test
+# )
+# 
+# # Initial XGBoost model
+# params <- list(
+#   objective = "binary:logistic",
+#   eval_metric = "auc",
+#   max_depth = 6,
+#   eta = 0.05,
+#   subsample = 0.8,
+#   colsample_bytree = 0.8,
+#   scale_pos_weight = scale_pos_weight
+# )
+# 
+# xgb_model <- xgb.train(
+#   params = params,
+#   data = dtrain,
+#   nrounds = 300,
+#   watchlist = list(train = dtrain, validation = dvalid),
+#   #verbose = 1
+# )
 
 
 ```
@@ -1094,18 +1094,41 @@ xgb_model <- xgb.train(
 #| label: xgboost-model1-prediction
 #| warning: FALSE
 #| echo: FALSE
-# Get predictions
-pred_prob <- predict(xgb_model, dvalid)
+# # Get predictions
+# pred_prob <- predict(xgb_model, dvalid)
+# 
+# pred_class <- ifelse(pred_prob > 0.30, 1, 0)
+# 
+# conf_mat <- table(
+#   Actual = y_valid,
+#   Predicted = pred_class
+# )
+# 
+# kable(as.data.frame.matrix(conf_mat),
+#       caption = "Confusion Matrix")
 
-pred_class <- ifelse(pred_prob > 0.30, 1, 0)
 
-conf_mat <- table(
-  Actual = y_valid,
-  Predicted = pred_class
+# Confusion Matrix
+# 0	1
+# 0	11792	717
+# 1	2971	163
+
+
+conf_xgb <- matrix(
+  c(11792, 717,
+    2971, 163),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list(
+    Actual = c("0", "1"),
+    Predicted = c("0", "1")
+  )
 )
 
-kable(as.data.frame.matrix(conf_mat),
-      caption = "Confusion Matrix")
+knitr::kable(
+  conf_xgb,
+  caption = "XGBoost Validation Confusion Matrix"
+)
 ```
 
 ```{r}
@@ -1113,9 +1136,11 @@ kable(as.data.frame.matrix(conf_mat),
 #| warning: FALSE
 #| echo: FALSE
 #| include: FALSE
-roc_obj <- roc(y_valid, pred_prob)
+# roc_obj <- roc(y_valid, pred_prob)
+# 
+# auc(roc_obj)
 
-auc(roc_obj)
+# Area under the curve: 0.4997
 ```
 
 
@@ -1125,44 +1150,74 @@ auc(roc_obj)
 #| warning: FALSE
 #| echo: FALSE
 
-thresholds <- c(0.10, 0.15, 0.20, 0.25, 0.30)
+# thresholds <- c(0.10, 0.15, 0.20, 0.25, 0.30)
+# 
+# xgb_threshold_results <- lapply(thresholds, function(t) {
+#   pred_class <- ifelse(pred_prob > t, 1, 0)
+#   tab <- table(
+#     Actual = y_valid,
+#     Predicted = pred_class
+#   )
+# 
+#   TN <- tab["0", "0"]
+#   FP <- tab["0", "1"]
+#   FN <- tab["1", "0"]
+#   TP <- tab["1", "1"]
+# 
+#   data.frame(
+#     Threshold = t,
+#     Accuracy = (TP + TN) / sum(tab),
+#     Recall = TP / (TP + FN),
+#     Precision = TP / (TP + FP),
+#     Specificity = TN / (TN + FP),
+#     F1 = 2 * ((TP / (TP + FP)) * (TP / (TP + FN))) /
+#       ((TP / (TP + FP)) + (TP / (TP + FN)))
+#   )
+# }) |> 
+#   bind_rows()
+# 
+# knitr::kable(
+#   xgb_threshold_results,
+#   format      = "simple",
+#   align       = c("c", "r", "r", "r", "r", "r"),
+#   caption     = "XGBoost Peformance by Threshold"
+# )
 
-xgb_threshold_results <- lapply(thresholds, function(t) {
-  pred_class <- ifelse(pred_prob > t, 1, 0)
-  tab <- table(
-    Actual = y_valid,
-    Predicted = pred_class
-  )
+# 
+# XGBoost Peformance by Threshold
+# Threshold	Accuracy	Recall	Precision	Specificity	F1
+# 0.10	0.2075050	0.9875558	0.2002847	0.0120713	0.3330285
+# 0.15	0.2922074	0.8567326	0.2017583	0.1507714	0.3266026
+# 0.20	0.4821965	0.5402042	0.2027059	0.4676633	0.2947937
+# 0.25	0.6723135	0.2115507	0.1998192	0.7877528	0.2055177
+# 0.30	0.7642396	0.0520102	0.1852273	0.9426813	0.0812157
 
-  TN <- tab["0", "0"]
-  FP <- tab["0", "1"]
-  FN <- tab["1", "0"]
-  TP <- tab["1", "1"]
-
-  data.frame(
-    Threshold = t,
-    Accuracy = (TP + TN) / sum(tab),
-    Recall = TP / (TP + FN),
-    Precision = TP / (TP + FP),
-    Specificity = TN / (TN + FP),
-    F1 = 2 * ((TP / (TP + FP)) * (TP / (TP + FN))) /
-      ((TP / (TP + FP)) + (TP / (TP + FN)))
-  )
-}) |> 
-  bind_rows()
-
-knitr::kable(
-  xgb_threshold_results,
-  format      = "simple",
-  align       = c("c", "r", "r", "r", "r", "r"),
-  caption     = "XGBoost Peformance by Threshold"
+xgb_threshold_results <- tribble(
+  ~Threshold, ~Accuracy, ~Recall, ~Precision, ~Specificity, ~F1,
+  0.10, 0.2075050, 0.9875558, 0.2002847, 0.0120713, 0.3330285,
+  0.15, 0.2922074, 0.8567326, 0.2017583, 0.1507714, 0.3266026,
+  0.20, 0.4821965, 0.5402042, 0.2027059, 0.4676633, 0.2947937,
+  0.25, 0.6723135, 0.2115507, 0.1998192, 0.7877528, 0.2055177,
+  0.30, 0.7642396, 0.0520102, 0.1852273, 0.9426813, 0.0812157
 )
+
+xgb_threshold_results %>%
+  mutate(
+    across(
+      c(Accuracy, Recall, Precision, Specificity, F1),
+      ~ scales::percent(.x, accuracy = 0.1)
+    )
+  ) %>%
+  kable(
+    caption = "XGBoost Performance by Classification Threshold"
+  )
+
 ```
 
 
 
 
-Finally, we trained an XGBoost model to explore if alternative classifiers could improve on the results we were observing in our random forest mode. We utilized the scale_pos_weight parameter when training the model to try compensating for the imbalance in the response variable. After training the model still had low accuracies, with a tested AUC score of 0.5274. We then explored different thresholds and found that 0.10 and 0.15 give better results for the imbalanced data.
+Finally, we trained an XGBoost model to explore if alternative classifiers could improve on the results we were observing in our random forest model. We utilized the scale_pos_weight parameter when training the model to try compensating for the imbalance in the response variable. After training the model still had low accuracies, with a tested AUC score of 0.50. To further evaluate XGBoost classifier performance, we examined the effect of varying the probability threshold used for default classification. We found that lower thresholds substantially increased recall, identifying nearly all default cases, but at the cost of a large number of false positives. Conversely, higher thresholds improved specificity while dramatically reducing the model's ability to detect defaults. Notably, precision remained relatively constant across all thresholds, suggesting that loans assigned higher default probabilities were not substantially more likely to default than those assigned lower probabilities. This finding is consistent with the model's AUC of 0.50, indicating that the XGBoost classifier provided only marginal improvement over random classification and was unable to effectively separate defaulting and non-defaulting loans using the available predictors.
 
 ## Comparison of Predicted Results
 
@@ -1172,49 +1227,87 @@ Finally, we trained an XGBoost model to explore if alternative classifiers could
 
 
 
-# Test Data on random forest 1
- pred.test.rf.sim1 <- predict(
-   rf.sim1,
-   newdata = testing[drop_cols],
-   type = "class"
- )
- table(testing[,41], pred.test.rf.sim1)
+# # Test Data on random forest 1
+#  pred.test.rf.sim1 <- predict(
+#    rf.sim1,
+#    newdata = testing[drop_cols],
+#    type = "class"
+#  )
+#  table(testing[,41], pred.test.rf.sim1)
+# 
+# 
+ conf_rf1_test <- matrix(
+  c(8567, 3978,
+    1269, 1782),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list(
+    Actual = c("0", "1"),
+    Predicted = c("0", "1")
+  )
+)
 
-# Test Data on random forest 2 
- # pred.test.rf.sim2 <- predict(
- #   rf.sim2,
- #   newdata = testing[drop_cols],
- #   type = "class"
+knitr::kable(
+  conf_rf1_test,
+  caption = "Random Forest Model 1 Test Set Confusion Matrix"
+)
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ # Test Data on random forest 2 
+  pred.test.rf.sim2 <- predict(
+    rf.sim2,
+    newdata = testing[drop_cols],
+    type = "class"
+  )
+  table(testing[,41], pred.test.rf.sim2)
+ 
+ 
+ 
+
+
+
+ 
+ 
+ # # XGB Score on the test data 
+ # test_prob <- predict(xgb_model, dtest)
+ # 
+ # test_class <- ifelse(test_prob > 0.30, 1, 0)
+ # 
+ # # 
+ # conf_mat <- table(
+ #   Actual = y_test,
+ #   Predicted = test_class
  # )
- # table(testing[,41], pred.test.rf.sim2)
-
-
-
-
-
+ # 
+ # # 
+ # kable(as.data.frame.matrix(conf_mat),
+ #       caption = "Confusion Matrix")
  
  
-# # XGB Score on the test data 
-# test_prob <- predict(xgb_model, dtest)
-# 
-# test_class <- ifelse(test_prob > 0.30, 1, 0)
-# 
-# # 
-# conf_mat <- table(
-#   Actual = x_test,
-#   Predicted = y_test
-# )
-# 
-# # 
-# kable(as.data.frame.matrix(conf_mat),
-#       caption = "Confusion Matrix")
+ 
+conf_xgb_test <- matrix(
+  c(11731, 814,
+    2902, 149),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list(
+    Actual = c("0", "1"),
+    Predicted = c("0", "1")
+  )
+)
+
+knitr::kable(
+  conf_xgb_test,
+  caption = "XGBoost Test Set Confusion Matrix"
+)
 ```
 
-
-
-
-
-Above are the results for our improved Randomforest and XGBoost. As we can see the tuned methods still issues with accuracy and imbalances. 
 
 
 # Obstacles 
@@ -1232,7 +1325,7 @@ The most major issue we encountered was due to the unbalanced data, as there a m
 In conclusion, while it is possible to fit many different models to our data, we can see how hard in practice it is to make an effective model, especially in situations with large datasets and imbalanced categories. As is inherent, there is a much smaller number of defaulted borrowers, but that disproportionate amounts means it is harder to utilize methods to accurate predict whether any specific borrowers will default. Different methods had different accuracy between defaults and non-defaults. We did get to experiment with a number of techniques in this project but ultimately none of them really improved the results to the expected level.
 
 
-## Next Steps  we should talk about next steps here
+## Next Steps
 There are several further steps we could take with our exploration.
 One potential idea was to fully treat Thin File and normal file as separate populations, and try training two separate models for each and seeing if we are able to have better predictive accuracy
 
