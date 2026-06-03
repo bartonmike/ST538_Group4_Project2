@@ -24,9 +24,6 @@ imputing or ignoring the distinction. Among scored borrowers, the CRIF CNS
 score serves as the single strongest individual predictor and is encoded here
 as a 20-level ordered factor preserving the full risk ranking across bands.
 
-
-
-
 ```{r}
 # Write a report based on the statistical analysis in this project. As described in the project outline page, write the report following those directions.
 # 
@@ -102,64 +99,6 @@ sapply(train_dat, anyNA)
 # Statistical Analysis
 
 ## Feature extraction and description
-
-First we took a cursory look at the dataset and certain key variables
-
-```{r}
-
-
-#| message: FALSE
-#| warning: FALSE
-  #head(train_dat)
-  #add graphs to demonstrate everything in the paragraph below
-  
-  #high loan to value
-  #thin file defaults
-  #age bands default vs no default
-  library(ggplot2)
-  train_dat |>  
-    filter(LOAN_DEFAULT == 1) |>
-    ggplot(aes(factor(age_at_disbursal), LTV)) + 
-    geom_boxplot(color = 'red') + 
-    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
-    ggtitle("LTV Distribution by Age for Defaulted Loans") +
-    theme(plot.title = element_text(hjust = 0.5))
-
-
-
-    
-  
-  train_dat |>  
-    filter(LOAN_DEFAULT == 0) |>
-    ggplot(aes(factor(age_at_disbursal), LTV)) + 
-    geom_boxplot(color = 'blue')+ 
-    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
-    ggtitle("LTV Distribution by Age for Active Loans") +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-  train_dat |>  
-    filter(LOAN_DEFAULT == 1) |>
-    ggplot(aes(credit_history_months)) + 
-    geom_histogram(bins = 30) + 
-    labs(x = "Months of Credit History", y = "Number of Defaulted Borrowers") +
-    ggtitle("Defaulted Borrowers by Months of Credit History") +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-```
-
-
-Thirty-five percent of loans are high loan to value (LTV) of >80%, combined with a large portion of borrowers having thin credit history (%), it shows a meaningful concentration of risk. The vast majority (94%) of borrowers fall in the prime age band, 13,812 young borrowers (<22 years of age) are worth watching. Fifty-six percent of borrowers are "thin file" meaning they have <12 month of credit history. This makes sense, in India about half of first time car buyers are using lending for the first time. Since thin and normal are two different populations, we debated on splitting the dataset and creating a model for thin credit and one for normal. Ultimately we decided it would be better to focus our efforts on normal only as the model will likely suffer trying to work on both. 
-
-After initial examination of this dataset, we were again reminded of the high dimensionality of each observation. We wanted to be able to focus on important features. Given the size of the dataset will already impact the speed of analytical methods, we want to remove as many unncessary variables as possible. Additionally, there are several columns with missing values or continuous variables that would serve better on translating into categories. 
-
-As such, our feature engineering focused on  translating domain knowledge into model-ready
-variables: loan structure risk (LTV, implied down payment), borrower
-demographics (age at disbursement, employment type), identity verification
-depth (KYC document count), credit utilisation and delinquency history across
-primary and secondary accounts, EMI burden relative to existing obligations,
-and recent bureau activity including new account uptake and hard enquiries.
-
-
 
 ```{r}
 #| include: false
@@ -414,7 +353,52 @@ train_dat <- train_dat %>%
 ```
 
 
+```{r}
+##| message: FALSE
+##| warning: FALSE
+#  #head(train_dat)
+#  #add graphs to demonstrate everything in the paragraph below
+#  
+#  #high loan to value
+#  #thin file defaults
+#  #age bands default vs no default
+#  library(ggplot2)
+#  train_dat |>  
+#    filter(LOAN_DEFAULT == 1) |>
+#    ggplot(aes(factor(age_at_disbursal), LTV)) + 
+#    geom_boxplot(color = 'red') + 
+#    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
+#    ggtitle("LTV Distribution by Age for Defaulted Loans") +
+#    theme(plot.title = element_text(hjust = 0.5))
+#
+#  train_dat |>  
+#    filter(LOAN_DEFAULT == 0) |>
+#    ggplot(aes(factor(age_at_disbursal), LTV)) + 
+#    geom_boxplot(color = 'blue')+ 
+#    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
+#    ggtitle("LTV Distribution by Age for Active Loans") +
+#    theme(plot.title = element_text(hjust = 0.5))
+#  
+#  train_dat |>  
+#    filter(LOAN_DEFAULT == 1) |>
+#    ggplot(aes(credit_history_months)) + 
+#    geom_histogram(bins = 30) + 
+#    labs(x = "Months of Credit History", y = "Number of Defaulted Borrowers") +
+#    ggtitle("Defaulted Borrowers by Months of Credit History") +
+#    theme(plot.title = element_text(hjust = 0.5))
+#  
+```
 
+Thirty-five percent of loans are high loan to value (LTV) of >80%, combined with a large portion of borrowers having thin credit history (%), it shows a meaningful concentration of risk. The vast majority (94%) of borrowers fall in the prime age band, 13,812 young borrowers (<22 years of age) are worth watching. Fifty-six percent of borrowers are "thin file" meaning they have <12 month of credit history. This makes sense, in India about half of first time car buyers are using lending for the first time. Since thin and normal are two different populations, we debated on splitting the dataset and creating a model for thin credit and one for normal. Ultimately we decided it would be better to focus our efforts on normal only as the model will likely suffer trying to work on both. 
+
+After initial examination of this dataset, we were again reminded of the high dimensionality of each observation. We wanted to be able to focus on important features. Given the size of the dataset will already impact the speed of analytical methods, we want to remove as many unncessary variables as possible. Additionally, there are several columns with missing values or continuous variables that would serve better on translating into categories. 
+
+As such, our feature engineering focused on  translating domain knowledge into model-ready
+variables: loan structure risk (LTV, implied down payment), borrower
+demographics (age at disbursement, employment type), identity verification
+depth (KYC document count), credit utilisation and delinquency history across
+primary and secondary accounts, EMI burden relative to existing obligations,
+and recent bureau activity including new account uptake and hard enquiries.
 
 ```{r}
 #| include: false
@@ -632,6 +616,8 @@ After feature extraction and variable selection, we split the dataset into train
 We will utilize two methods to try classifying defaults accurately:
 Random Forest & XGBoost
 
+Explanation of removal of variables with missingness:
+
 ```{r}
 #| echo: false
 #| include: false
@@ -723,91 +709,91 @@ x_validation <- validation[, drop_cols]
 
 
 ```{r}
-#| echo: false
-##| include: false
-   rf.sim1 = randomForest(training[,c(-1, -5, -7, -10, -11, -12, -13, -14, -17, -18, -19, -26, -27, -29, -31, -32, -33, -35, -56, -66, -41)], 
-                          factor(training$LOAN_DEFAULT))
+# #| echo: false
+# #| include: false
+#    rf.sim1 = randomForest(training[,c(-1, -5, -7, -10, -11, -12, -13, -14, -17, -18, -19, -26, -27, -29, -31, -32, -33, -35, -56, -66, -41)], 
+#                           factor(training$LOAN_DEFAULT))
 
 ```
 
 
 ```{r}
-#| echo: false
-##| include: false
-   pred.rf.sim1 = rf.sim1$predicted
-   table(training[,41], pred.rf.sim1)
-   
-   varImpPlot(rf.sim1)
-  # 
-
-  # #training |> filter(high_stress_flag == 1)
-  # 
-  # #    pred.rf.sim1
-  # #       0     1
-  # # 0 57124   395
-  # # 1 14256   355
-```
-
-```{r}
-#| echo: false
-##| include: false
- pred.val.rf.sim1 <- predict(
-   rf.sim1,
-   newdata = x_validation,
-   type = "class"
- )
- 
- table(validation[,41], pred.val.rf.sim1)
+# #| echo: false
+# #| include: false
+#    pred.rf.sim1 = rf.sim1$predicted
+#    table(training[,41], pred.rf.sim1)
+#    
+#    varImpPlot(rf.sim1)
+#   # 
 # 
-#   #  pred.rf.sim1
-#   #       0     1
-#   # 0 12415    94
-#   # 1  3056    78
+#   # #training |> filter(high_stress_flag == 1)
+#   # 
+#   # #    pred.rf.sim1
+#   # #       0     1
+#   # # 0 57124   395
+#   # # 1 14256   355
 ```
 
-
 ```{r}
-#| echo: false
-##| include: false
- rf.sim2 <- randomForest(
-   x = training[, c(-1, -5, -7, -10, -11, -12, -13,
-                    -14, -17, -18, -19, -26, -27,
-                    -29, -31, -32, -33, -35,
-                    -56, -66, -41)],
-   
-   y = factor(training$LOAN_DEFAULT),
- 
-   ntree = 500,
-   importance = TRUE
- )
+# #| echo: false
+# #| include: false
+#  pred.val.rf.sim1 <- predict(
+#    rf.sim1,
+#    newdata = x_validation,
+#    type = "class"
+#  )
+#  
+#  table(validation[,41], pred.val.rf.sim1)
+# # 
+# #   #  pred.rf.sim1
+# #   #       0     1
+# #   # 0 12415    94
+# #   # 1  3056    78
 ```
 
 
 ```{r}
-#| echo: false
-##| include: false
-# 
- pred.rf.sim2 <- rf.sim2$predicted
- table(training[,41], pred.rf.sim2)
- # pred.rf.sim2
- #         0     1
- #   0 57132   387
- #   1 14246   365
- 
- pred.val.rf.sim2 <- predict(
-   rf.sim2,
-   newdata = x_validation,
-   type = "class"
- )
-# 
-# 
- table(validation[,41], pred.val.rf.sim2)
-# 
-# 
-#   #  pred.rf.sim2
-#   #       0     1
-#   # 0 12407   102
-#   # 1  3058    76
+# #| echo: false
+# #| include: false
+#  rf.sim2 <- randomForest(
+#    x = training[, c(-1, -5, -7, -10, -11, -12, -13,
+#                     -14, -17, -18, -19, -26, -27,
+#                     -29, -31, -32, -33, -35,
+#                     -56, -66, -41)],
+#    
+#    y = factor(training$LOAN_DEFAULT),
+#  
+#    ntree = 500,
+#    importance = TRUE
+#  )
+```
+
+
+```{r}
+# #| echo: false
+# #| include: false
+# # 
+#  pred.rf.sim2 <- rf.sim2$predicted
+#  table(training[,41], pred.rf.sim2)
+#  # pred.rf.sim2
+#  #         0     1
+#  #   0 57132   387
+#  #   1 14246   365
+#  
+#  pred.val.rf.sim2 <- predict(
+#    rf.sim2,
+#    newdata = x_validation,
+#    type = "class"
+#  )
+# # 
+# # 
+#  table(validation[,41], pred.val.rf.sim2)
+# # 
+# # 
+# #   #  pred.rf.sim2
+# #   #       0     1
+# #   # 0 12407   102
+# #   # 1  3058    76
 ```
 
 
@@ -823,8 +809,6 @@ x_validation <- validation[, drop_cols]
  # table(digit_no.test, rfPred.digit)  
   # Variable Importance Plot
   #varImpPlot(rf.digit)  
-  
-
 ```
 
 
@@ -898,6 +882,7 @@ x_validation <- validation[, drop_cols]
 #   # 0 9345 3164
 #   # 1 1646 1488
 ```
+
 ```{r}
 #| echo: false
 #| warning: false
@@ -1226,16 +1211,15 @@ rbind(count(smote_training), count(smote_validation), count(smote_testing))
 
 ```{r}
 #| echo: false
-##| include: false
+#| include: false
    smote.rf.sim1 = randomForest(smote_training[,c(-19)], 
                           factor(smote_training$LOAN_DEFAULT))
-
 ```
 
 
 ```{r}
 #| echo: false
-##| include: false
+#| include: false
    smote.pred.rf.sim1 = smote.rf.sim1$predicted
    table(smote_training[,19], smote.pred.rf.sim1)
   

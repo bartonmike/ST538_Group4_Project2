@@ -4,7 +4,6 @@ author: Paul Anderson, Michael Barton, Kevin Kincaid
 format: pdf
 ---
 
-
 This analysis uses the CRIF High Mark vehicle loan dataset to develop a feature set capable
 of identifying first-EMI default risk across both scored and thin-file borrower
 segments. The dataset is comprised of  233,154 disbursed loans with a binary default indicator
@@ -12,10 +11,6 @@ capturing payment failure on the first EMI due date. A notable characteristic
 of this population is that 56% of borrowers carry no scoreable bureau history,
 which necessitates treating thin-file and scored segments with care rather than
 imputing or ignoring the distinction. 
-
-
-
-
 
 ```{r}
 #| include: false
@@ -75,9 +70,9 @@ sapply(train_dat, anyNA)
 Feature engineering focuses on translating domain knowledge into model-ready
 variables: loan structure risk (LTV, implied down payment), borrower
 demographics (age at disbursement, employment type), identity verification
-depth (KYC document count), credit utilisation and delinquency history across
+depth (KYC document count), credit utilization and delinquency history across
 primary and secondary accounts, EMI burden relative to existing obligations,
-and recent bureau activity including new account uptake and hard enquiries.
+and recent bureau activity including new account uptake and hard inquiries.
 
 A composite stress score aggregating six binary risk flags is also constructed
 as a diagnostic and interpretability aid. Initial cross-tabulation confirms
