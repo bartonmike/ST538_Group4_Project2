@@ -356,39 +356,39 @@ train_dat <- train_dat %>%
 
 
 ```{r}
-##| message: FALSE
-##| warning: FALSE
-#  #head(train_dat)
-#  #add graphs to demonstrate everything in the paragraph below
-#  
-#  #high loan to value
-#  #thin file defaults
-#  #age bands default vs no default
-#  library(ggplot2)
-#  train_dat |>  
-#    filter(LOAN_DEFAULT == 1) |>
-#    ggplot(aes(factor(age_at_disbursal), LTV)) + 
-#    geom_boxplot(color = 'red') + 
-#    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
-#    ggtitle("LTV Distribution by Age for Defaulted Loans") +
-#    theme(plot.title = element_text(hjust = 0.5))
-#
-#  train_dat |>  
-#    filter(LOAN_DEFAULT == 0) |>
-#    ggplot(aes(factor(age_at_disbursal), LTV)) + 
-#    geom_boxplot(color = 'blue')+ 
-#    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
-#    ggtitle("LTV Distribution by Age for Active Loans") +
-#    theme(plot.title = element_text(hjust = 0.5))
-#  
-#  train_dat |>  
-#    filter(LOAN_DEFAULT == 1) |>
-#    ggplot(aes(credit_history_months)) + 
-#    geom_histogram(bins = 30) + 
-#    labs(x = "Months of Credit History", y = "Number of Defaulted Borrowers") +
-#    ggtitle("Defaulted Borrowers by Months of Credit History") +
-#    theme(plot.title = element_text(hjust = 0.5))
-#  
+#| message: FALSE
+#| warning: FALSE
+  #head(train_dat)
+  #add graphs to demonstrate everything in the paragraph below
+  
+  #high loan to value
+  #thin file defaults
+  #age bands default vs no default
+  library(ggplot2)
+  train_dat |>  
+    filter(LOAN_DEFAULT == 1) |>
+    ggplot(aes(factor(age_at_disbursal), LTV)) + 
+    geom_boxplot(color = 'red') + 
+    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
+    ggtitle("LTV Distribution by Age for Defaulted Loans") +
+    theme(plot.title = element_text(hjust = 0.5))
+
+  train_dat |>  
+    filter(LOAN_DEFAULT == 0) |>
+    ggplot(aes(factor(age_at_disbursal), LTV)) + 
+    geom_boxplot(color = 'blue')+ 
+    labs(x = "Age at Dispersal", y = "Distribution of Loan-to-Value") +
+    ggtitle("LTV Distribution by Age for Active Loans") +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  train_dat |>  
+    filter(LOAN_DEFAULT == 1) |>
+    ggplot(aes(credit_history_months)) + 
+    geom_histogram(bins = 30) + 
+    labs(x = "Months of Credit History", y = "Number of Defaulted Borrowers") +
+    ggtitle("Defaulted Borrowers by Months of Credit History") +
+    theme(plot.title = element_text(hjust = 0.5))
+  
 ```
 
 Thirty-five percent of loans are high loan to value (LTV) of >80%, combined with a large portion of borrowers having thin credit history (%), it shows a meaningful concentration of risk. The vast majority (94%) of borrowers fall in the prime age band, 13,812 young borrowers (<22 years of age) are worth watching. Fifty-six percent of borrowers are "thin file" meaning they have <12 month of credit history. This makes sense, in India about half of first time car buyers are using lending for the first time. Since thin and normal are two different populations, we debated on splitting the dataset and creating a model for thin credit and one for normal. Ultimately we decided it would be better to focus our efforts on normal only as the model will likely suffer trying to work on both. 
@@ -609,6 +609,8 @@ Administrative identifiers with no predictive signal were also removed, includin
 
 Finally, the four weakest KYC flags were dropped in favor of the summary measures kyc_doc_count and strong_kyc_flag, and the secondary account financial detail columns were removed as redundant given the derived exposure flags already in the feature set. LOAN_DEFAULT was excluded as the response variable.
 
+## I THINK THE ABOVE MIGHT GO ON FOR TWO LONG, especially as we do a lot of other stuff in this section
+
 ```{r}
 #| echo: FALSE
 #| include: FALSE
@@ -748,6 +750,11 @@ x_testing <- testing[, drop_cols]
 #  theme_classic() +
 #  labs(title = "RF1 Variable Importance", x = "Mean Decrease Gini", y = NULL)
 ```
+
+First, we tried fitting a default random forest classifier to the training data and evaluating its performance on both the training and validation datasets. Due to the strong class imbalance in the loan default variable, the initial models showed poor sensitivity for detecting loan defaults, despite relatively high overall accuracy. 
+
+
+
 ```{r}
 #| fig.height: 8
 #| fig.width: 6
@@ -842,6 +849,7 @@ varImpPlot(rf.sim1, type = 1)
  #   # 0 12415    94
  #   # 1  3056    78
 ```
+Upon further exploration of the data, we found that random forest was having issues based on the  Gini importance metric, as it favors high-cardinality variables such as CURRENT_PINCODE_ID, DATE_OF_BIRTH, DISBURSED_AMOUNT because they offer more split opportunities, not necessarily because they better predict defaults. Meanwhile, credit-risk variables that should be more informative such as PERFORM_CNS_SCORE, delinquency measures, leverage ratio, and our key predictors rank in the middle, likely due to class imbalance rather than a lack of predictive value. Before moving forward, we switched the importance metric to use Mean decrease accuracy
 
 
 ```{r}
@@ -1002,7 +1010,7 @@ kable(
 
 
 
-First, we tried fitting a default random forest classifier to the training data and evaluating its performance on both the training and validation datasets. Due to the strong class imbalance in the loan default variable, the initial models showed poor sensitivity for detecting loan defaults, despite relatively high overall accuracy. We then adjusted model parameters and explored additional tuning strategies, including the use of tuneRF() to optimize the mtry parameter and balanced sampling to improve classification performance. The tuned model substantially improved recall for default predictions, though it also increased the number of FALSE positive classifications. While the final random forest model showed meaningful improvement over the baseline models (Table 2), prediction performance for loan defaults remained moderate, indicating that additional tuning or alternative classification methods may be necessary for highly imbalanced loan data. 
+After adjusting the model parameters we explored additional tuning strategies, including the use of tuneRF() to optimize the mtry parameter and balanced sampling to improve classification performance. The tuned model substantially improved recall for default predictions, though it also increased the number of FALSE positive classifications. While the final random forest model showed meaningful improvement over the baseline models (Table 2), prediction performance for loan defaults remained moderate, indicating that additional tuning or alternative classification methods may be necessary for highly imbalanced loan data. 
 
 
 
@@ -1158,9 +1166,12 @@ knitr::kable(
 ```
 
 
-Next we trained XGBoost classifiers on our cleaned dataset. We did utilize the scale_pos_weight parameter when training the model to try compensating for the imbalance in the response variable. After training the model we found it was doing worse than our tuned forest. In testing the AUC score was 0.5274, confirming the models inaccuracy. We then explored different   thresholds and found that 0.10 and 0.15 give better results for the imbalanced data. It may be necessary to utilize LASSO or other methods to try and remove overlapping variables before training the XGBoost models.
+The next model we trained on the cleaned dataset was utilizing an XGBoost classifier. We utilized the scale_pos_weight parameter when training the model to try compensating for the imbalance in the response variable. After training the model still had low accuracies, with a tested AUC score of 0.5274. We then explored different thresholds and found that 0.10 and 0.15 give better results for the imbalanced data. 
 
+It may be necessary to utilize LASSO or other methods to try and remove overlapping variables before training the XGBoost models.
+^^^^ Did we ever use lasso in this? did we ever explore further solutions on XGBoost it seems like we've really under explored that method compared to random forest
 
+## Comparison of Predicted Results
 
 ```{r}
 # Lets see how it does on our test data.
@@ -1205,7 +1216,7 @@ kable(as.data.frame.matrix(conf_mat),
       caption = "Confusion Matrix")
 ```
 
-## Comparison of Predicted Results
+
 
 ```{r}
 # Lets compare all the methods together
@@ -1214,13 +1225,17 @@ kable(as.data.frame.matrix(conf_mat),
 ```
 
 
-Full discussion of results
+Above are the results for our improved Randomforest and XGBoost. As we can see the tuned methods still issues with accuracy and imbalances. 
 
 
 # Obstacles 
 There are several complications with this dataset. One is in the variety of data. Files marked as "thin file" with little credit history had different demographic patterns and higher default rates, enough to the point we considered splitting the dataset into two populations. We tried to compensate with the steps we took in feature engineering. There was also the size of the dataset. The sheer number of observations means that running our analysis took significantly longer as certain methods take five minutes to compile and check results. The size coupled with the dimensionality meant some functions relating to random forest couldn't be used at all on our devices. We compensated for this by consolidating features and using methods with LASSO to remove excess data before passing to functions. 
 
+Another issue we had was in the random forest prioritization of variables. Basedo on our assessement of variable importance, there were certain markers that should've been utilized as the most important. However, we determined that random forest was prioritizing variables with high cardinality. We exerpimented with switching the variable importance evaluation method which proved useful.
+
 The most major issue we encountered was due to the unbalanced data, as there a much higher number of defaults compared to non-defaults. The exact ratio is . Different models we trained on the data handled the different categorizes of data inconsistently. Random forest would make accurate non-default forecasting, but would perform poorly on loans that defaulted. XGBoost at the standard threshold performed well on loans that defaulted, but not on loans that didn't. We had decided to use SMOTE methods, as those are commonly suggested as a mitigator for unbalanced data. However, when we implemented this in our dataset it only marginally decreased our prediction errors. One possible issue might have been the size of our dataset and it's imbalance might have limited this methods effectiveness. 
+
+
 
 
 
