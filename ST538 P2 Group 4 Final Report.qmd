@@ -6,9 +6,9 @@ format: pdf
 
 
 # Dataset Background
-Our project is focused on predicting whether a customer for a Vehicle Loan will default based on their financial state at time of borrowing. Default Vehicle loan will default prediction presents a distinct set of challenges relative to other retail credit products. Unlike mortgage or personal loan portfolios, two-wheeler financing in emerging markets such as India serves a large population of first-time borrowers with little or no bureau history, making traditional score-based underwriting insufficient on its own. This analysis uses the CRIF High Mark vehicle loan dataset to develop a feature set capable of identifying first-EMI default risk across both scored and thin-file borrower segments.
+Vehicle loan default prediction presents a distinct set of challenges relative to other retail credit products. Unlike mortgage or personal loan portfolios, two-wheeler financing in emerging markets such as India serves a large population of first-time borrowers with little or no bureau history, making traditional score-based underwriting insufficient on its own. This analysis uses the CRIF High Mark vehicle loan dataset to develop a feature set capable of identifying first-EMI default risk across both scored and thin-file borrower segments.
 
-This analysis uses the CRIF High Mark vehicle loan dataset to develop a feature set capable of identifying first-EMI default risk across both scored and thin-file borrower segments. The dataset comprises 233,154 disbursed loans with a binary default indicator capturing payment failure on the first EMI due date. A notable characteristic of this population is that 56% of borrowers carry no scoreable bureau history, which necessitates treating thin-file and scored segments with care rather than imputing or ignoring the distinction. Among scored borrowers, the CRIF CNS score serves as the single strongest individual predictor and is encoded here as a 20-level ordered factor preserving the full risk ranking across bands.
+The dataset comprises 233,154 disbursed loans with a binary default indicator capturing payment failure on the first EMI due date. A notable characteristic of this population is that 56% of borrowers carry no scoreable bureau history, which necessitates treating thin-file and scored segments with care rather than imputing or ignoring the distinction. Among scored borrowers, the CRIF CNS score serves as the single strongest individual predictor and is encoded here as a 20-level ordered factor preserving the full risk ranking across bands.
 
 ```{r}
 #| label: final-report-guidelines
@@ -926,6 +926,7 @@ ggplot(imp_df, aes(x = MeanDecreaseGini, y = Feature, fill = Highlighted)) +
 ```{r}
 #| echo: false
 #| warning: false
+#| include: false
 rf_results <- tribble(
   ~Model, ~Dataset, ~TN, ~FP, ~FN, ~TP,
 
@@ -973,13 +974,13 @@ The resulting model showed a substantially better balance between correctly iden
 
 
 ```{r}
-#| label: randomforest-model-rftune-setup
+#| label: randomforest-model-tuneRF-setup
 #| echo: FALSE
 #| include: FALSE
 #| eval: FALSE
 
 # https://www.statology.org/random-forest-in-r/
-# Trying to optimize with RFTune
+# Trying to optimize with tuneRF
 # Commented out to allow the doc to render faster
 tune.rf <- tuneRF(
   x = training[, drop_cols],
@@ -994,7 +995,7 @@ tune.rf <- tuneRF(
 
 
 ```{r}
-#| label: randomforest-model-rftune
+#| label: randomforest-model-tuneRF
 #| echo: FALSE
 #| include: FALSE
 #| eval: FALSE
@@ -1020,7 +1021,7 @@ rf.final <- randomForest(
 
 
 ```{r}
-#| label: randomforest-model-rftune-prediction
+#| label: randomforest-model-tuneRF-prediction
 #| echo: FALSE
 #| include: FALSE
 #| eval: FALSE
@@ -1063,8 +1064,8 @@ rf_results <- tribble(
   "rf.sim2", "Training", 39958, 17561, 6416, 8195,
   "rf.sim2", "Validation", 8613, 3896, 1397, 1737,
 
-  "rftune", "Training",  43542, 13977, 7518, 7093,
-  "rftune", "Validation", 9345, 3164, 1646, 1488
+  "tuneRF", "Training",  43542, 13977, 7518, 7093,
+  "tuneRF", "Validation", 9345, 3164, 1646, 1488
 ) %>%
   mutate(
     Accuracy = (TP + TN) / (TP + TN + FP + FN),
@@ -1203,6 +1204,7 @@ xgb_model <- xgb.train(
 #| warning: FALSE
 #| echo: FALSE
 #| label: xgboost-model1-prediction-static-table
+#| include: false
 
 conf_xgb <- matrix(
   c(11792, 717,
@@ -1438,6 +1440,7 @@ knitr::kable(
   caption = "XGBoost Test Set Confusion Matrix"
 )
 ```
+
 
 
 
