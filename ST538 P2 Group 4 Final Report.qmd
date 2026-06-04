@@ -350,6 +350,8 @@ train_dat <- train_dat %>%
 #| label: eda-graph-exploration
 #| message: FALSE
 #| warning: FALSE
+#| include: false
+#| echo: false
   # #head(train_dat)
   # #add graphs to demonstrate everything in the paragraph below
   # 
@@ -712,9 +714,9 @@ x_testing <- testing[, drop_cols]
 
 ```{r}
 #| label: randomforest-model1
- #| echo: FALSE
- #| include: FALSE
- #| eval: FALSE
+#| echo: FALSE
+#| include: FALSE
+#| eval: FALSE
  
  rf.sim1 = randomForest(training[drop_cols], 
                            factor(training$LOAN_DEFAULT))
@@ -724,9 +726,9 @@ x_testing <- testing[, drop_cols]
 
 ```{r}
 #| label: randomforest-model1-pred-validation
- #| echo: FALSE
- #| include: FALSE
- #| eval: FALSE
+#| echo: FALSE
+#| include: FALSE
+#| eval: FALSE
 
 
     pred.rf.sim1 = rf.sim1$predicted
@@ -762,6 +764,8 @@ First, we tried fitting a default random forest classifier to the training data 
 ```{r}
 #| label: randomforest-model1-diagnostics
 #| eval: FALSE
+#| echo: FALSE
+#| include: FALSE
 #| fig.height: 8
 #| fig.width: 6
 # Theoretically meaningful variables — highlighted regardless of Gini rank
@@ -815,6 +819,8 @@ Running diagnostics on the default random forest model, we observed that the var
 ```{r}
 #| label: randomforest-model2
 #| eval: FALSE
+#| echo: FALSE
+#| include: FALSE
 rf.sim2 = randomForest(
   training[drop_cols],
   factor(training$LOAN_DEFAULT),
@@ -826,6 +832,8 @@ rf.sim2 = randomForest(
 ```{r}
 #| label: randomforest-model2-graph
 #| eval: FALSE
+#| echo: FALSE
+#| include: FALSE
 # graph the output on accuracy score
 varImpPlot(rf.sim2, type = 1)
 ```
@@ -835,6 +843,8 @@ varImpPlot(rf.sim2, type = 1)
 ```{r}
 #| label: randomforest-model2-diagnostics
 #| eval: FALSE
+#| echo: FALSE
+#| include: FALSE
 #| fig.height: 8
 #| fig.width: 6
 # Theoretically meaningful variables — highlighted regardless of Gini rank
@@ -887,9 +897,9 @@ ggplot(imp_df, aes(x = MeanDecreaseGini, y = Feature, fill = Highlighted)) +
 
 ```{r}
 #| label: randomforest-model2-pred-validation
- #| echo: FALSE
- #| include: TRUE
- #| eval: FALSE
+#| echo: FALSE
+#| include: TRUE
+#| eval: FALSE
 
     # pred.rf.sim2 = rf.sim2$predicted
     # table(training[,41], pred.rf.sim2)
@@ -914,6 +924,8 @@ ggplot(imp_df, aes(x = MeanDecreaseGini, y = Feature, fill = Highlighted)) +
 #   1 1396 1738
 ```
 ```{r}
+#| echo: false
+#| warning: false
 rf_results <- tribble(
   ~Model, ~Dataset, ~TN, ~FP, ~FN, ~TP,
 
@@ -1184,6 +1196,8 @@ xgb_model <- xgb.train(
 
 
 ```{r}
+#| warning: FALSE
+#| echo: FALSE
 #| label: xgboost-model1-prediction-static-table
 
 conf_xgb <- matrix(
@@ -1268,6 +1282,8 @@ knitr::kable(
 
 
 ```{r}
+#| warning: FALSE
+#| echo: FALSE
 #| label: xgboost-model1-diagnostics-static-table
 #| warning: FALSE
 xgb_threshold_results <- tribble(
@@ -1317,6 +1333,7 @@ Finally, we trained an XGBoost model to explore if alternative classifiers could
 
 ```{r}
 #| label: test-data-rfmodel1-static-table
+#| echo: false
 
 conf_rf1_test <- matrix(
   c(8567, 3978,
