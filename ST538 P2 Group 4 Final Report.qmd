@@ -595,18 +595,15 @@ cbind(count(train_dat_normal),count(train_dat_thin))
 ```
 
 
-## Predictive Model Fitting
+## Splitting the data
 
 After feature extraction and variable selection, the dataset was split into training, validation, and testing subsets using a 70/15/15 ratio. Given the decision to model scored borrowers separately, the split was applied to the 103,369 non-thin-file records, resulting in approximately 72,000 observations in the training set and roughly 15,000 each in the validation and testing sets. Two classification methods were evaluated: Random Forest and XGBoost.
 
-Prior to model fitting, columns were removed from the feature set for one of three reasons: missingness, redundancy, or lack of predictive relevance.
-Three columns contained missing values incompatible with random forest. EMPLOYMENT_TYPE carried 7,661 NAs from blank strings in the raw data, thin_file_reason carried 103,369 NAs by design as it is only populated for thin-file borrowers, and new_loan_emi_ratio carried 159,517 NAs arising when PRIMARY_INSTAL_AMT is zero. Rather than impute these, they were excluded given that the information each carries is represented elsewhere in the feature set.
+Prior to model fitting, several columns were removed from the feature set. Administrative identifiers with no predictive value (e.g., UNIQUEID, BRANCH\_ID, EMPLOYEE_CODE\_ID, and EMPLOYEE\_CODE\_ID) were excluded, as were variables whose information had already been incorporated into engineered features. In addition, columns containing substantial missingness were removed. These missing values were either structural (e.g., thin_file_reason is only populated for thin-file borrowers) or resulted from calculations involving a zero PRIMARY\_INSTA\L_AMT (e.g., new\_loan\_emi\_ratio). Because the relevant information was captured elsewhere in the feature set, these variables were excluded from the modeling dataset.
 
-Administrative identifiers with no predictive signal were also removed, including UNIQUEID, BRANCH_ID, EMPLOYEE_CODE_ID, and MANUFACTURER_ID. DISBURSAL_DATE and STATE_ID were excluded as their relevant information had already been extracted into engineered features during feature construction.
+Finally, the four weakest KYC flags were dropped in favor of the summary measures kyc\_doc_count and strong\_kyc_flag, and the secondary account financial detail columns were removed as redundant given the derived exposure flags already in the feature set. LOAN\_DEFAULT was excluded as the response variable.
 
-Finally, the four weakest KYC flags were dropped in favor of the summary measures kyc_doc_count and strong_kyc_flag, and the secondary account financial detail columns were removed as redundant given the derived exposure flags already in the feature set. LOAN_DEFAULT was excluded as the response variable.
-
-## I THINK THE ABOVE MIGHT GO ON FOR TWO LONG, especially as we do a lot of other stuff in this section
+## Predictive Model Fitting
 
 ```{r}
 #| label: data-split-train-validate-test
@@ -887,10 +884,11 @@ ggplot(imp_df, aes(x = MeanDecreaseGini, y = Feature, fill = Highlighted)) +
   ) +
   labs(
     title = "RF2 Variable Importance",
-    x     = "Mean Decrease Gini",
+    x     = "Mean Decrease Accuracy",
     y     = NULL
   )
 ```
+
 
 
 
@@ -968,8 +966,39 @@ rf_results %>%
 | ![](images/rf1-diag.png){width=3in} | ![](images/rf2-diag.png){width=3in} |
 
 
-The resulting model showed a substantially better balance between correctly identifying defaulting and non-defaulting loans. On the validation dataset, the model achieved an accuracy of 66.2%, a recall of 55.4%, and a specificity of 68.8%, indicating that it was able to correctly identify more than half of all loan defaults while maintaining reasonable performance on non-defaulting loans. Precision remained relatively low at 30.8%, reflecting the continued challenge of accurately identifying defaults in an imbalanced dataset. Similar results were observed on the test dataset, where the model achieved an accuracy of 66.5%, a recall of 57.7%, and a specificity of 68.7%. The close agreement between validation and test performance suggests that the model generalized well to unseen data and was not substantially overfit to the training set. Overall, the tuned random forest represented a meaningful improvement over the baseline model by substantially increasing default detection while maintaining stable performance across datasets.
+The balanced random forest model (RF2) showed a substantially better balance between correctly identifying defaulting and non-defaulting loans than the baseline random forest (RF1). While RF1 achieved high overall accuracy (79.9%) on the validation dataset, it correctly identified only 2.5% of loan defaults, indicating that it largely failed to detect the minority class. In contrast, RF2 achieved a lower overall accuracy of 65.7% but increased recall to 54.9%, correctly identifying more than half of all defaulting loans. This improvement came at the cost of reduced specificity (68.5% versus 99.2%) and a larger number of false positive classifications. Similar results were observed on the test dataset, where RF2 achieved a recall of 58.4% compared with only 2.8% for RF1, while maintaining comparable precision (30.9% versus 53.2%). The close agreement between validation and test performance suggests that RF2 generalized well to unseen data and was not substantially overfit to the training set. Overall, the balanced random forest represented a meaningful improvement over the baseline model by substantially increasing default detection while maintaining stable performance across datasets.
 
+
+```{r}
+#| label: overall-model-static-performance-table
+#| echo: FALSE
+
+
+model_results <- tribble(
+  ~Model, ~Dataset, ~TN, ~FP, ~FN, ~TP, ~Accuracy, ~Recall, ~Precision, ~Specificity, ~F1,
+
+  "RF1", "Training",   57124,   395, 14256,  355, "79.7%", "2.4%", "47.3%", "99.3%", "4.6%",
+  "RF1", "Validation", 12414,    95,  3055,   79, "79.9%", "2.5%", "45.4%", "99.2%", "4.8%",
+  "RF1", "Test",       12471,    74,  2967,   84, "80.5%", "2.8%", "53.2%", "99.4%", "5.2%",
+
+  "RF2", "Training",   39879, 17640,  6378, 8233, "66.7%", "56.3%", "31.8%", "69.3%", "40.7%",
+  "RF2", "Validation",  8564,  3945,  1414, 1720, "65.7%", "54.9%", "30.4%", "68.5%", "39.1%",
+  "RF2", "Test",        8571,  3974,  1270, 1781, "66.4%", "58.4%", "30.9%", "68.3%", "40.4%",
+
+  "TuneRF", "Training",   43449, 14070, 7542, 7069, "70.0%", "48.4%", "33.4%", "75.5%", "39.5%",
+  "TuneRF", "Validation",  9329,  3180, 1645, 1489, "69.2%", "47.5%", "31.9%", "74.6%", "38.2%",
+  "TuneRF", "Test",        9359,  3186, 1513, 1538, "69.9%", "50.4%", "32.6%", "74.6%", "39.6%",
+
+  "XGBoost", "Training",   14805, 42714,  333, 14278, "40.3%", "97.7%", "25.1%", "25.7%", "39.9%",
+  "XGBoost", "Validation", 12509,     0, 3134,     0, "80.0%", "0.0%",  "NA",   "100.0%", "NA",
+  "XGBoost", "Test",       12545,     0, 3051,     0, "80.4%", "0.0%",  "NA",   "100.0%", "NA"
+)
+
+knitr::kable(
+  model_results,
+  caption = "Model Performance Across Training, Validation, and Test Sets"
+)
+```
 
 
 
@@ -1003,7 +1032,7 @@ tune.rf <- tuneRF(
 # Commented out to allow the doc to render faster
  best.mtry <- tune.rf[which.min(tune.rf[,2]),1]
 # 
-rf.final <- randomForest(
+rf.rftune <- randomForest(
   x = training[, drop_cols],
   y = factor(training$LOAN_DEFAULT),
 
@@ -1027,21 +1056,21 @@ rf.final <- randomForest(
 #| eval: FALSE
 
  # # Commented out to allow the doc to render faster
-   pred.rf.final = rf.final$predicted
-   table(training[,41], pred.rf.final)
+   pred.rf.rftune = rf.rftune$predicted
+   table(training[,41], pred.rf.rftune)
    # pred.rf.final
  #   #       0     1
  #   # 0 43542 13977
  #   # 1  7518  7093
  # 
-   pred.rf.final <- predict(
-   rf.final,
+   pred.rf.rftune <- predict(
+   rf.rftune,
    newdata = x_validation,
    type = "class"
  )
  # 
  # 
-  table(validation[,41], pred.rf.final)
+  table(validation[,41], pred.rf.rftune)
 # 
 #   # pred.rf.final
 #   #      0    1
@@ -1053,6 +1082,8 @@ rf.final <- randomForest(
 #| label: randomforest-model-comparison-table
 #| echo: FALSE
 #| warning: FALSE
+#| include: false
+#| eval: false
 
 # Pulling everything from the commented out models above.
 rf_results <- tribble(
@@ -1340,6 +1371,7 @@ Finally, we trained an XGBoost model to explore if alternative classifiers could
 ```{r}
 #| label: test-data-rfmodel1-static-table
 #| echo: false
+#| include: false
 
 conf_rf1_test <- matrix(
   c(8567, 3978,
@@ -1377,6 +1409,7 @@ knitr::kable(
 #| label: test-data-rfmodel2-static-table
 #| warning: false
 #| echo: false
+#| include: false
 # Static table of test Data on random forest 2 (Paul's improved model)
 conf_rf2_test <- matrix(
   c(8618, 3927,
@@ -1423,6 +1456,7 @@ knitr::kable(
 #| label: test-data-xgbmodel1-static-table
 #| echo: false
 #| warning: false
+#| include: false
 # static table of test data on XGB
 conf_xgb_test <- matrix(
   c(11731, 814,
@@ -1442,14 +1476,132 @@ knitr::kable(
 ```
 
 
+```{r}
+#| label: overall-model-performance table
+#| echo: false
+#| eval: false
+#| include: false
+#| warning: false
+
+
+# Helper function for confusion matrix + metrics
+get_metrics <- function(actual, predicted, model_name, dataset_name) {
+  
+  tab <- table(
+    Actual = factor(actual, levels = c(0, 1)),
+    Predicted = factor(predicted, levels = c(0, 1))
+  )
+  
+  TN <- tab["0", "0"]
+  FP <- tab["0", "1"]
+  FN <- tab["1", "0"]
+  TP <- tab["1", "1"]
+  
+  tibble(
+    Model = model_name,
+    Dataset = dataset_name,
+    TN = TN,
+    FP = FP,
+    FN = FN,
+    TP = TP,
+    Accuracy = (TP + TN) / sum(tab),
+    Recall = TP / (TP + FN),
+    Precision = TP / (TP + FP),
+    Specificity = TN / (TN + FP),
+    F1 = 2 * Precision * Recall / (Precision + Recall)
+  )
+}
+
+
+# Actual outcomes
+y_train <- training$LOAN_DEFAULT
+y_valid <- validation$LOAN_DEFAULT
+y_test  <- testing$LOAN_DEFAULT
+
+
+# RF1 predictions
+rf1_train <- rf.sim1$predicted
+rf1_valid <- predict(rf.sim1, newdata = validation[drop_cols], type = "class")
+rf1_test  <- predict(rf.sim1, newdata = testing[drop_cols], type = "class")
+
+
+# RF2 predictions
+rf2_train <- rf.sim2$predicted
+rf2_valid <- predict(rf.sim2, newdata = validation[drop_cols], type = "class")
+rf2_test  <- predict(rf.sim2, newdata = testing[drop_cols], type = "class")
+
+
+# TuneRF predictions
+tunerf_train <- rf.rftune$predicted
+tunerf_valid <- predict(rf.rftune, newdata = validation[drop_cols], type = "class")
+tunerf_test  <- predict(rf.rftune, newdata = testing[drop_cols], type = "class")
+
+
+# XGBoost predictions
+xgb_train_prob <- predict(xgb_model, dtrain)
+xgb_valid_prob <- predict(xgb_model, dvalid)
+xgb_test_prob  <- predict(xgb_model, dtest)
+
+xgb_train <- ifelse(xgb_train_prob > 0.30, 1, 0)
+xgb_valid <- ifelse(xgb_valid_prob > 0.30, 1, 0)
+xgb_test  <- ifelse(xgb_test_prob > 0.30, 1, 0)
+
+final_prediction_table <- bind_rows(
+  
+  get_metrics(y_train, rf1_train, "RF1", "Training"),
+  get_metrics(y_valid, rf1_valid, "RF1", "Validation"),
+  get_metrics(y_test,  rf1_test,  "RF1", "Test"),
+  
+  get_metrics(y_train, rf2_train, "RF2", "Training"),
+  get_metrics(y_valid, rf2_valid, "RF2", "Validation"),
+  get_metrics(y_test,  rf2_test,  "RF2", "Test"),
+  
+  get_metrics(y_train, tunerf_train, "TuneRF", "Training"),
+  get_metrics(y_valid, tunerf_valid, "TuneRF", "Validation"),
+  get_metrics(y_test,  tunerf_test,  "TuneRF", "Test"),
+  
+  get_metrics(y_train, xgb_train, "XGBoost", "Training"),
+  get_metrics(y_valid, xgb_valid, "XGBoost", "Validation"),
+  get_metrics(y_test,  xgb_test,  "XGBoost", "Test")
+)
+
+final_prediction_table %>%
+  mutate(
+    across(
+      c(Accuracy, Recall, Precision, Specificity, F1),
+      ~ scales::percent(.x, accuracy = 0.1)
+    )
+  ) %>%
+  kable(
+    caption = "Model Performance Across Training, Validation, and Test Sets"
+  )
+```
+
+
+```{r}
+#| label: dataset-imbalance-ratio
+#| eval: false
+#| echo: false
+#| include: false
+
+# train_dat %>%
+#   filter(LOAN_DEFAULT == 1) %>%
+#   count()
+# 
+# train_dat %>%
+#   filter(LOAN_DEFAULT == 0) %>%
+#   count()
+# 
+# 182543/50611
+```
 
 
 # Obstacles 
-There are several complications with this dataset. One is in the variety of data. Files marked as "thin file" with little credit history had different demographic patterns and higher default rates, enough to the point we considered splitting the dataset into two populations. We tried to compensate with the steps we took in feature engineering. There was also the size of the dataset. The sheer number of observations means that running our analysis took significantly longer as certain methods take five minutes to compile and check results. The size coupled with the dimensionality meant some functions relating to random forest couldn't be used at all on our devices. We compensated for this by consolidating features and using methods with LASSO to remove excess data before passing to functions. 
+There are several complications with this dataset. One is in the variety of data. Files marked as "thin file" with little credit history had different demographic patterns and higher default rates, enough to the point we decided to split the dataset into two populations. We tried to compensate with the steps we took in feature engineering. There was also the size of the dataset. The sheer number of observations means that running an analysis took significantly longer as certain methods take five minutes to compile and check results. The size coupled with the dimensionality meant some functions relating to random forest couldn't be used at all on our devices. We compensated for this by consolidating features and using methods with LASSO to remove excess data before passing to functions. 
 
-Another issue we had was in the random forest prioritization of variables. Basedo on our assessement of variable importance, there were certain markers that should've been utilized as the most important. However, we determined that random forest was prioritizing variables with high cardinality. We exerpimented with switching the variable importance evaluation method which proved useful.
+Another issue we had was in the random forest prioritization of variables. Based on our assessement of variable importance, there were certain markers that should've been utilized as the most important. However, we determined that random forest was prioritizing variables with high cardinality. We exerpimented with switching the variable importance evaluation method which proved useful.
 
-The most major issue we encountered was due to the unbalanced data, as there a much higher number of defaults compared to non-defaults. The exact ratio is . Different models we trained on the data handled the different categorizes of data inconsistently. Random forest would make accurate non-default forecasting, but would perform poorly on loans that defaulted. XGBoost at the standard threshold performed well on loans that defaulted, but not on loans that didn't. We had decided to use SMOTE methods, as those are commonly suggested as a mitigator for unbalanced data. However, when we implemented this in our dataset it only marginally decreased our prediction errors. One possible issue might have been the size of our dataset and it's imbalance might have limited this methods effectiveness. 
+The most major issue we encountered was due to the unbalanced data, as there a much higher number of defaults compared to non-defaults. The exact ratio is 3.61. Different models we trained on the data handled the different categorizes of data inconsistently. Random forest would make accurate non-default forecasting, but would perform poorly on loans that defaulted. XGBoost at the standard threshold performed well on loans that defaulted, but not on loans that didn't. We had decided to use SMOTE methods, as those are commonly suggested as a mitigator for unbalanced data. However, when we implemented this in our dataset it only marginally decreased our prediction errors. One possible issue might have been the size of our dataset and it's imbalance might have limited this methods effectiveness. 
 
 
 
@@ -1460,8 +1612,7 @@ In conclusion, while it is possible to fit many different models to our data, we
 
 
 ## Next Steps
-There are several further steps we could take with our exploration.
-One potential idea was to fully treat Thin File and normal file as separate populations, and try training two separate models for each and seeing if we are able to have better predictive accuracy
+There are several further steps we could take with our exploration. One potential idea is to further explore our thin file data to see if it performs any better or worse in model fitting than our normal file data.
 
 
 
