@@ -961,6 +961,10 @@ rf_results %>%
     caption = "Random Forest Performance Metrics"
   )
 ```
+<!-- This creates a 2 column layout that plays nice with PDF -->
+| Random Forest | Tuned Random Forest |
+|:---:|:---:|
+| ![](images/rf1-diag.png){width=3in} | ![](images/rf2-diag.png){width=3in} |
 
 
 The resulting model showed a substantially better balance between correctly identifying defaulting and non-defaulting loans. On the validation dataset, the model achieved an accuracy of 66.2%, a recall of 55.4%, and a specificity of 68.8%, indicating that it was able to correctly identify more than half of all loan defaults while maintaining reasonable performance on non-defaulting loans. Precision remained relatively low at 30.8%, reflecting the continued challenge of accurately identifying defaults in an imbalanced dataset. Similar results were observed on the test dataset, where the model achieved an accuracy of 66.5%, a recall of 57.7%, and a specificity of 68.7%. The close agreement between validation and test performance suggests that the model generalized well to unseen data and was not substantially overfit to the training set. Overall, the tuned random forest represented a meaningful improvement over the baseline model by substantially increasing default detection while maintaining stable performance across datasets.
@@ -1282,10 +1286,10 @@ knitr::kable(
 
 
 ```{r}
-#| warning: FALSE
-#| echo: FALSE
 #| label: xgboost-model1-diagnostics-static-table
 #| warning: FALSE
+#| echo: FALSE
+
 xgb_threshold_results <- tribble(
   ~Threshold, ~Accuracy, ~Recall, ~Precision, ~Specificity, ~F1,
   0.10, 0.2075050, 0.9875558, 0.2002847, 0.0120713, 0.3330285,
@@ -1369,6 +1373,8 @@ knitr::kable(
 
 ```{r}
 #| label: test-data-rfmodel2-static-table
+#| warning: false
+#| echo: false
 # Static table of test Data on random forest 2 (Paul's improved model)
 conf_rf2_test <- matrix(
   c(8618, 3927,
@@ -1413,6 +1419,8 @@ knitr::kable(
 
 ```{r}
 #| label: test-data-xgbmodel1-static-table
+#| echo: false
+#| warning: false
 # static table of test data on XGB
 conf_xgb_test <- matrix(
   c(11731, 814,
