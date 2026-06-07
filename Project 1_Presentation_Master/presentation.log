@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2026.4.30)  6 JUN 2026 19:00
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2026.4.30)  6 JUN 2026 20:06
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -938,10 +938,15 @@ Overfull \hbox (2.96399pt too wide) has occurred while \output is active
 [2
 
  <./lib/layouts/horizontal_bg.pdf>]
-Overfull \hbox (2.96399pt too wide) in paragraph at lines 109--109
+Overfull \hbox (2.96399pt too wide) in paragraph at lines 113--113
 [][][][]  
  []
 
+<figs/rf.png, id=55, 546.843pt x 236.68425pt>
+File: figs/rf.png Graphic file (type png)
+<use figs/rf.png>
+Package pdftex.def Info: figs/rf.png  used on input line 113.
+(pdftex.def)             Requested size: 299.4391pt x 129.60973pt.
 
 
 
@@ -956,11 +961,16 @@ Overfull \hbox (2.96399pt too wide) has occurred while \output is active
 
 [3
 
-]
-Overfull \hbox (2.96399pt too wide) in paragraph at lines 121--121
+ <./lib/layouts/vertical_bg.pdf> <./figs/rf.PNG>]
+Overfull \hbox (2.96399pt too wide) in paragraph at lines 128--128
 [][][][]  
  []
 
+<figs/xgb.png, id=76, 470.9595pt x 150.5625pt>
+File: figs/xgb.png Graphic file (type png)
+<use figs/xgb.png>
+Package pdftex.def Info: figs/xgb.png  used on input line 128.
+(pdftex.def)             Requested size: 336.86542pt x 107.6973pt.
 
 
 
@@ -975,11 +985,16 @@ Overfull \hbox (2.96399pt too wide) has occurred while \output is active
 
 [4
 
-]
-Overfull \hbox (2.96399pt too wide) in paragraph at lines 147--147
+ <./figs/xgb.png>]
+Overfull \hbox (2.96399pt too wide) in paragraph at lines 163--163
 [][][][]  
  []
 
+<figs/stressscore.png, id=84, 548.0475pt x 335.45325pt>
+File: figs/stressscore.png Graphic file (type png)
+<use figs/stressscore.png>
+Package pdftex.def Info: figs/stressscore.png  used on input line 163.
+(pdftex.def)             Requested size: 202.12129pt x 123.71649pt.
 
 
 
@@ -994,8 +1009,8 @@ Overfull \hbox (2.96399pt too wide) has occurred while \output is active
 
 [5
 
-]
-Overfull \hbox (2.96399pt too wide) in paragraph at lines 162--162
+ <./figs/stressscore.png>]
+Overfull \hbox (2.96399pt too wide) in paragraph at lines 178--178
 [][][][]  
  []
 
@@ -1014,7 +1029,7 @@ Overfull \hbox (2.96399pt too wide) has occurred while \output is active
 [6
 
 ]
-Overfull \hbox (2.96399pt too wide) in paragraph at lines 176--176
+Overfull \hbox (2.96399pt too wide) in paragraph at lines 192--192
 [][][][]  
  []
 
@@ -1051,18 +1066,18 @@ Package rerunfilecheck Info: File `presentation.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 28326 strings out of 475128
- 564032 string characters out of 5762968
- 902038 words of memory out of 5000000
- 50724 multiletter control sequences out of 15000+600000
- 640987 words of font info for 88 fonts, out of 8000000 for 9000
+ 28389 strings out of 475128
+ 565444 string characters out of 5762968
+ 902216 words of memory out of 5000000
+ 50783 multiletter control sequences out of 15000+600000
+ 641409 words of font info for 89 fonts, out of 8000000 for 9000
  36 hyphenation exceptions out of 8191
- 128i,14n,123p,414b,702s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 128i,14n,123p,414b,954s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/Users/kevin/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/google/roboto/Roboto-Bold.pfb><c:/Users/kevin/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/google/roboto/Roboto-Regular.pfb><c:/Users/kevin/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
-Output written on presentation.pdf (7 pages, 1204667 bytes).
+Output written on presentation.pdf (7 pages, 2729635 bytes).
 PDF statistics:
- 102 PDF objects out of 1000 (max. 8388607)
- 60 compressed objects within 1 object stream
- 15 named destinations out of 1000 (max. 500000)
- 63 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 124 PDF objects out of 1000 (max. 8388607)
+ 68 compressed objects within 1 object stream
+ 18 named destinations out of 1000 (max. 500000)
+ 78 words of extra memory for PDF output out of 10000 (max. 10000000)
 
