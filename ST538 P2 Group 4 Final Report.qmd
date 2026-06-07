@@ -14,20 +14,6 @@ The dataset comprises 233,154 disbursed loans with a binary default indicator ca
 #| label: final-report-guidelines
 #| include: FALSE
 #| echo: FALSE
-# Write a report based on the statistical analysis in this project. As described in the project outline page, write the report following those directions.
-# 
-# Submit a four-page (reasonable margins and font size) document that summarizes the elements listed below (preferably in separate sections).
-# 
-# Project/data background and the questions that you addressed.
-# Statistical analysis reported in the same framework as in interim reports -
-# -  feature selection,
-# -  predictive model fitting,
-# -  comparison of prediction results of the fitted models, specifically on the held-out test set created on Week 7 (if possible).
-# -  Obstacles you encountered and useful/interesting solutions to overcoming those obstacles. 
-# -  Conclusion with additional questions that you generated and/or future work that you could do with the data your team used.
-# 
-# Submit the completed report as a link in the relevant discussion.
-# The report should be at most four pages, not counting figures and R codes. Please include the R codes as an appendix to the report. 
 ```
 
 
@@ -1003,6 +989,51 @@ knitr::kable(
 
 
 ```{r}
+
+plot_dat <- model_results %>%
+  mutate(
+    Accuracy    = readr::parse_number(Accuracy),
+    Recall      = readr::parse_number(Recall),
+    Precision   = readr::parse_number(Precision),
+    Specificity = readr::parse_number(Specificity),
+    F1          = readr::parse_number(F1),
+
+    Dataset = factor(
+      Dataset,
+      levels = c("Training", "Validation", "Test")
+    )
+  ) %>%
+  pivot_longer(
+    cols = c(Accuracy, Recall, Precision, Specificity, F1),
+    names_to = "Metric",
+    values_to = "Value"
+  )
+
+
+ggplot(
+  plot_dat,
+  aes(
+    x = Dataset,
+    y = Value,
+    color = Model,
+    group = Model
+  )
+) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  facet_wrap(~ Metric) +
+  theme_minimal() +
+  labs(
+    title = "Model Performance Across Datasets",
+    y = "Percent",
+    x = NULL
+  )
+```
+
+
+
+
+```{r}
 #| label: randomforest-model-tuneRF-setup
 #| echo: FALSE
 #| include: FALSE
@@ -1345,6 +1376,27 @@ xgb_threshold_results %>%
 
 ```
 
+```{r}
+
+
+xgb_threshold_results %>%
+  pivot_longer(
+    cols = c(Recall, Precision, Specificity),
+    names_to = "Metric",
+    values_to = "Value"
+  ) %>%
+  ggplot(aes(x = Threshold, y = Value, color = Metric, group = Metric)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_continuous(breaks = xgb_threshold_results$Threshold) +
+  theme_minimal() +
+  labs(
+    title = "XGBoost Threshold Tradeoff",
+    x = "Classification Threshold",
+    y = "Metric Value"
+  )
+```
 
 
 
